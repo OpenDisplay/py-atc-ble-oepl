@@ -1,6 +1,5 @@
 """ATC firmware protocol implementation."""
 
-import asyncio
 import logging
 import struct
 from typing import TYPE_CHECKING
@@ -13,10 +12,8 @@ from .constants import (
     BLE_MIN_RESPONSE_LENGTH,
     CMD_GET_DISPLAY_INFO,
     CMD_GET_DYNAMIC_CONFIG,
-    CMD_INIT,
     DYNAMIC_CONFIG_MIN_LENGTH,
     DYNAMIC_CONFIG_RESPONSE_PREFIX,
-    INIT_DELAY_SECONDS,
 )
 
 if TYPE_CHECKING:
@@ -160,29 +157,12 @@ class ATCProtocol:
         if len(payload) < 31:
             raise BLEProtocolError("Response payload too short")
 
-        # Log full response for debugging dimension issues
-        _LOGGER.debug("Full response (hex): %s", response.hex())
-        _LOGGER.debug("Payload (hex): %s", payload.hex())
-
         # Parse display specifications from 0005 response:
 
-        # Offset 19: Width/Height inversion flag
         wh_inverted = payload[19] == 1
-        _LOGGER.debug("Byte 19 (wh_inverted flag): 0x%02x -> inverted=%s", payload[19], wh_inverted)
-
-        # Offset 22-23: Height (uint16, little-endian)
-        height_bytes = payload[22:24]
-        height = struct.unpack("<H", height_bytes)[0]
-        _LOGGER.debug("Bytes 22-23 (height): %s -> %d", height_bytes.hex(), height)
-
-        # Offset 24-25: Width (uint16, little-endian)
-        width_bytes = payload[24:26]
-        width = struct.unpack("<H", width_bytes)[0]
-        _LOGGER.debug("Bytes 24-25 (width): %s -> %d", width_bytes.hex(), width)
-
-        # Offset 30: Color count (1=BW, 2=BWR/BWY, 3=BWRY)
+        height = struct.unpack("<H", payload[22:24])[0]
+        width = struct.unpack("<H", payload[24:26])[0]
         colors = payload[30]
-        _LOGGER.debug("Byte 30 (colors): 0x%02x -> %d", payload[30], colors)
 
         # Determine color support from device response
         if colors >= 3:
@@ -345,18 +325,3 @@ class ATCProtocol:
             flash_pinout=flash_pinout,
         )
 
-    async def initialize_connection(self, connection: "BLEConnection") -> None:
-        """ATC protocol requires CMD_INIT command before use.
-
-        Sends initialization command and waits for device to be ready.
-
-        Args:
-            connection: Active BLE connection to device
-        """
-        _LOGGER.debug(
-            "Sending CMD_INIT to ATC device %s, waiting %ss",
-            connection.mac_address,
-            INIT_DELAY_SECONDS,
-        )
-        await connection.write_command(CMD_INIT)
-        await asyncio.sleep(INIT_DELAY_SECONDS)

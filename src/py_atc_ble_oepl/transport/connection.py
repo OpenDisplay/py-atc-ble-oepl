@@ -102,9 +102,8 @@ class BLEConnection:
             await self.client.start_notify(self.write_char, self._notification_callback)
             self._notification_active = True
 
-            # Let protocol handle its own initialization requirements
-            if self.protocol:
-                await self.protocol.initialize_connection(self)
+            # Brief settling delay before first command (mirrors the web uploader's 450ms setTimeout)
+            await asyncio.sleep(0.45)
 
             return self
 
