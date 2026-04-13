@@ -7,7 +7,7 @@ name = "py-atc-ble-oepl"
 version = "0.2.0"
 description = "Python module for interacting with ATC BLE firmware on OEPL e-paper tags"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [
     {name = "g4bri3lDev", email = "admin@g4bri3l.de"}
@@ -17,7 +17,7 @@ keywords = []  # TODO: Add relevant keywords
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries :: Python Modules",
