@@ -213,8 +213,8 @@ def _add_upload_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentP
     p.add_argument(
         "--dither-mode",
         choices=list(_DITHER_CHOICES),
-        default="ordered",
-        help="Dithering algorithm (default: ordered)",
+        default="burkes",
+        help="Dithering algorithm (default: burkes)",
     )
     p.add_argument(
         "--fit",

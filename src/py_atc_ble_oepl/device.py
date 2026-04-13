@@ -234,7 +234,7 @@ class ATCDevice:
     async def upload_image(
         self,
         image_data: bytes | str | Image.Image,
-        dither_mode: DitherMode = DitherMode.ORDERED,
+        dither_mode: DitherMode = DitherMode.BURKES,
         compress: bool = True,
         fit: FitMode = FitMode.CONTAIN,
         rotate: Rotation = Rotation.ROTATE_0,
@@ -283,14 +283,10 @@ class ATCDevice:
 
             _LOGGER.debug("Original image size: %dx%d", img.width, img.height)
 
-            # Determine target dimensions
+            # Determine target dimensions — rotatebuffer is handled internally by the
+            # ATC firmware; we encode at the logical display dimensions as reported.
             target_width = self._metadata.width
             target_height = self._metadata.height
-
-            # Apply device rotatebuffer (swap target dims so encoding gets correct orientation)
-            if self._metadata.rotatebuffer == 1:
-                _LOGGER.debug("Applying 90° rotation for ATC device")
-                target_width, target_height = target_height, target_width
 
             # Apply user rotation + fit to target dimensions
             img = _apply_image_transform(img, rotate, fit, target_width, target_height)
