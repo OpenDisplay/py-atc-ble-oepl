@@ -78,15 +78,15 @@ class DeviceMetadata:
         return int(self._metadata.get("fw_version", 0))
 
     def formatted_fw_version(self) -> str | None:
-        """Return firmware version formatted as hex string.
+        """Return firmware version as a decimal string.
 
         Returns:
-            Formatted version like "0x0123", or None if unavailable
+            Formatted version like "105", or None if unavailable
         """
         fw = self.fw_version
         if fw == 0:
             return None
-        return f"0x{fw:04x}"
+        return str(fw)
 
     def get_best_upload_method(self) -> str:
         """Determine the best upload method for ATC devices.

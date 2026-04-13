@@ -23,6 +23,7 @@ from rich.tree import Tree
 from .device import ATCDevice
 from .discovery import discover_atc_devices
 from .exceptions import ATCError, BLEConnectionError, BLEProtocolError, BLETimeoutError
+from .models.advertising import AdvertisingData
 from .models.device_types import get_device_type_name
 from .models.enums import FitMode, Rotation
 
@@ -108,7 +109,16 @@ async def _scan(timeout: float, output_json: bool) -> None:
         devices = await discover_atc_devices(timeout=timeout)
 
     if output_json:
-        _stdout.print_json(json.dumps([{"address": d.mac_address, "name": d.name, "rssi": d.rssi} for d in devices]))
+        rows = []
+        for d in devices:
+            row: dict[str, Any] = {"address": d.mac_address, "name": d.name, "rssi": d.rssi}
+            if d.advertising_data:
+                row["battery_mv"] = d.advertising_data.battery_mv
+                row["battery_pct"] = d.advertising_data.battery_pct
+                row["temperature"] = d.advertising_data.temperature
+                row["fw_version"] = d.advertising_data.fw_version
+            rows.append(row)
+        _stdout.print_json(json.dumps(rows))
         return
 
     if not devices:
@@ -119,8 +129,15 @@ async def _scan(timeout: float, output_json: bool) -> None:
     table.add_column("Address", style="cyan")
     table.add_column("Name")
     table.add_column("RSSI", justify="right")
+    table.add_column("Battery", justify="right")
+    table.add_column("Temp", justify="right")
+    table.add_column("FW", justify="right")
     for d in devices:
-        table.add_row(d.mac_address, d.name, f"{d.rssi} dBm")
+        adv: AdvertisingData | None = d.advertising_data
+        battery_str = f"{adv.battery_pct}% ({adv.battery_mv} mV)" if adv else "\u2014"
+        temp_str = f"{adv.temperature} °C" if adv and adv.temperature is not None else "\u2014"
+        fw_str = str(adv.fw_version) if adv and adv.fw_version else "\u2014"
+        table.add_row(d.mac_address, d.name, f"{d.rssi} dBm", battery_str, temp_str, fw_str)
     _console.print(table)
 
 
