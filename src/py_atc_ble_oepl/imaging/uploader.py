@@ -26,6 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 class BLEResponse(Enum):
     """BLE upload response codes."""
 
+    CMD_ACK = "0063"
     BLOCK_REQUEST = "00C6"
     BLOCK_PART_ACK = "00C4"
     BLOCK_PART_CONTINUE = "00C5"
@@ -173,6 +174,10 @@ class BLEImageUploader:
             response_enum = BLEResponse(response_code)
 
             match response_enum:
+                case BLEResponse.CMD_ACK:
+                    _LOGGER.debug("Command ACK received")
+                    return True
+
                 case BLEResponse.BLOCK_REQUEST:
                     # Device requests a specific block
                     # Block ID is at payload offset 9 (response byte 11)
