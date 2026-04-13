@@ -32,7 +32,7 @@ class DiscoveredDevice:
     device: "BLEDevice"
 
 
-async def discover_atc_devices(timeout: float = 10.0) -> list[DiscoveredDevice]:
+async def discover_atc_devices(timeout: float = 30.0) -> list[DiscoveredDevice]:
     """Discover ATC BLE devices by manufacturer ID.
 
     Scans for BLE devices advertising with the ATC manufacturer ID (0x1337).

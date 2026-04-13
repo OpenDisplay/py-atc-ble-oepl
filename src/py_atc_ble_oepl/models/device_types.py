@@ -66,15 +66,15 @@ DEVICE_TYPES: dict[int, str] = {
 }
 
 
-def get_device_type_name(hw_type: int) -> str:
-    """Return human-readable name for an OEPL hw_type value.
+def get_device_type_name(screen_type: int) -> str:
+    """Return human-readable name for an ATC screen_type value.
 
     Args:
-        hw_type: Hardware type identifier from device advertising/config
+        screen_type: Screen type identifier from the 00CD dynamic config response
 
     Returns:
         Name string, or 'unknown (0xXXXX)' for unrecognised types
     """
-    if hw_type in DEVICE_TYPES:
-        return DEVICE_TYPES[hw_type]
-    return f"unknown (0x{hw_type:04X})"
+    if screen_type in DEVICE_TYPES:
+        return DEVICE_TYPES[screen_type]
+    return f"unknown (0x{screen_type:04X})"

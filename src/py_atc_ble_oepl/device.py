@@ -124,7 +124,7 @@ class ATCDevice:
         mac_address: str,
         ble_device: "BLEDevice | None" = None,
         auto_interrogate: bool = True,
-        connection_timeout: float = 15.0,
+        connection_timeout: float = 60.0,
     ):
         """Initialize ATC device.
 
@@ -132,7 +132,7 @@ class ATCDevice:
             mac_address: Device MAC address (on macOS, this is a UUID)
             ble_device: Optional BLEDevice from discovery (avoids re-scanning, recommended on macOS)
             auto_interrogate: Automatically query device capabilities on first connection
-            connection_timeout: BLE connection timeout in seconds (default: 15.0)
+            connection_timeout: BLE connection timeout in seconds (default: 60.0)
         """
         self.mac_address = mac_address
         self._ble_device = ble_device

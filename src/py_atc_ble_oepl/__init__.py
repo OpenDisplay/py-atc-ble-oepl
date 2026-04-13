@@ -8,7 +8,7 @@ Example usage:
     >>> from epaper_dithering import DitherMode
     >>>
     >>> # Discover devices
-    >>> devices = await discover_atc_devices(timeout=5.0)
+    >>> devices = await discover_atc_devices(timeout=30.0)
     >>> print(f"Found {len(devices)} devices")
     >>>
     >>> # Upload image
@@ -29,7 +29,7 @@ from .exceptions import (
 )
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
-from .models.device_types import DEVICE_TYPES, get_device_type_name
+from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name
 from .models.enums import FitMode, Rotation
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
@@ -51,6 +51,7 @@ __all__ = [
     "Rotation",
     # Device type map
     "DEVICE_TYPES",
+    "SCREEN_TYPE_COLOR_SCHEME",
     "get_device_type_name",
     # Exceptions
     "ATCError",
