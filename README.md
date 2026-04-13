@@ -4,7 +4,7 @@
 
 # py-atc-ble-oepl
 
-Python library for interacting with [ATC BLE firmware](https://atc1441.github.io/ATC_GICISKY_Paper_Image_Upload.html) over Bluetooth Low Energy.
+Python library for interacting with [ATC BLE firmware](https://atc1441.github.io/ATC_BLE_OEPL.bin) over Bluetooth Low Energy.
 
 ## Installation
 
@@ -139,13 +139,13 @@ if devices:
 ATCDevice(mac_address, ble_device=None, auto_interrogate=True, connection_timeout=60.0)
 ```
 
-| Method / Property | Description |
-|---|---|
-| `async interrogate()` | Query device capabilities (called automatically on connect) |
-| `async upload_image(image, ...)` | Upload and display an image |
-| `width`, `height` | Display dimensions in pixels (`None` before interrogation) |
-| `color_scheme` | `ColorScheme` enum value (`None` before interrogation) |
-| `device_config` | `DeviceConfig` dataclass with full hardware settings |
+| Method / Property                | Description                                                 |
+|----------------------------------|-------------------------------------------------------------|
+| `async interrogate()`            | Query device capabilities (called automatically on connect) |
+| `async upload_image(image, ...)` | Upload and display an image                                 |
+| `width`, `height`                | Display dimensions in pixels (`None` before interrogation)  |
+| `color_scheme`                   | `ColorScheme` enum value (`None` before interrogation)      |
+| `device_config`                  | `DeviceConfig` dataclass with full hardware settings        |
 
 ### `discover_atc_devices(timeout=30.0)`
 
@@ -153,24 +153,28 @@ Scans for ATC BLE devices (manufacturer ID `0x1337`). Returns `list[DiscoveredDe
 
 ### `DeviceCapabilities`
 
-| Field | Type | Description |
-|---|---|---|
-| `width` | `int` | Display width in pixels |
-| `height` | `int` | Display height in pixels |
+| Field          | Type  | Description                  |
+|----------------|-------|------------------------------|
+| `width`        | `int` | Display width in pixels      |
+| `height`       | `int` | Display height in pixels     |
 | `color_scheme` | `int` | 0=MONO, 1=BWR, 2=BWY, 3=BWRY |
 
 ### `DeviceConfig`
 
 Full hardware configuration from the `0011` dynamic config read. Key fields:
 
-| Field | Type | Description |
-|---|---|---|
-| `hw_type` | `int` | OEPL tag type (hex) |
-| `screen_type` | `int` | ATC screen driver type (1–47) |
-| `screen_w`, `screen_h` | `int` | Physical display dimensions |
-| `screen_colors` | `int` | Color count |
-| `black_invert`, `second_color_invert` | `bool` | Color plane polarity |
-| `epd_pinout`, `led_pinout`, `nfc_pinout`, `flash_pinout` | dataclass or `None` | GPIO pin assignments |
+| Field                                                    | Type                | Description                   |
+|----------------------------------------------------------|---------------------|-------------------------------|
+| `hw_type`                                                | `int`               | OEPL tag type (hex)           |
+| `screen_type`                                            | `int`               | ATC screen driver type (1–47) |
+| `screen_w`, `screen_h`                                   | `int`               | Physical display dimensions   |
+| `screen_colors`                                          | `int`               | Color count                   |
+| `black_invert`, `second_color_invert`                    | `bool`              | Color plane polarity          |
+| `epd_pinout`, `led_pinout`, `nfc_pinout`, `flash_pinout` | dataclass or `None` | GPIO pin assignments          |
+
+## Acknowledgements
+
+This library is based on the work of [Aaron (atc1441)](https://github.com/atc1441) - creator of the [ATC BLE firmware](https://atc1441.github.io/ATC_BLE_OEPL.bin) and the original [web uploader](https://atc1441.github.io/ATC_BLE_OEPL_Image_Upload.html) for ATC BLE e-paper tags. The BLE protocol implemented here is derived entirely from that web uploader.
 
 ## Development
 
