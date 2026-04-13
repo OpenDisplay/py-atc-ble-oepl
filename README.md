@@ -9,13 +9,19 @@ Python library for interacting with [ATC BLE firmware](https://atc1441.github.io
 ## Installation
 
 ```bash
-pip install py-atc-ble-oepl
+uv add py-atc-ble-oepl
 ```
 
 For the CLI:
 
 ```bash
-pip install "py-atc-ble-oepl[cli]"
+uv add "py-atc-ble-oepl[cli]"
+```
+
+Or run the CLI directly without installing into a project:
+
+```bash
+uvx --from "py-atc-ble-oepl[cli]" atc-ble scan
 ```
 
 ## CLI
