@@ -29,6 +29,7 @@ uvx --from "py-atc-ble-oepl[cli]" atc-ble scan
 ```
 atc-ble scan [--timeout 30] [--json]
 atc-ble info  --device ADDR [--timeout 60] [--json]
+atc-ble led   --device ADDR [--duration 5]
 atc-ble upload --device ADDR IMAGE [--dither-mode burkes] [--fit contain] [--rotate 0] [--no-compress]
 ```
 
@@ -53,6 +54,12 @@ $ atc-ble info --device 5F4CEF52-A1CD-E2EE-011F-F27129B8D4A9
     ├── OEPL type     0x0060
     ├── Screen type   2  (350 HS BWY UC Inverted)
     └── ...
+```
+
+**Flash the LED to identify a device physically:**
+```
+$ atc-ble led --device 5F4CEF52-A1CD-E2EE-011F-F27129B8D4A9
+LED done → ATC_911943
 ```
 
 **Upload an image:**
@@ -142,6 +149,7 @@ ATCDevice(mac_address, ble_device=None, auto_interrogate=True, connection_timeou
 | Method / Property                | Description                                                 |
 |----------------------------------|-------------------------------------------------------------|
 | `async interrogate()`            | Query device capabilities (called automatically on connect) |
+| `async flash_led(duration=5.0)`  | Flash the LED for `duration` seconds to identify the device |
 | `async upload_image(image, ...)` | Upload and display an image                                 |
 | `width`, `height`                | Display dimensions in pixels (`None` before interrogation)  |
 | `color_scheme`                   | `ColorScheme` enum value (`None` before interrogation)      |

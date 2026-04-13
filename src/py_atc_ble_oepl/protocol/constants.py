@@ -8,6 +8,10 @@ SERVICE_UUID = "00001337-0000-1000-8000-00805f9b34fb"
 CMD_GET_DISPLAY_INFO = bytes([0x00, 0x05])  # Query device display capabilities
 CMD_GET_DYNAMIC_CONFIG = bytes([0x00, 0x11])  # Read full device settings
 
+# LED Control Commands
+CMD_LED_ON = bytes([0x00, 0x01, 0x03])  # Turn LED on (also turns off on BLE disconnect)
+CMD_LED_OFF = bytes([0x00, 0x01, 0x00])  # Turn LED off
+
 # Protocol Response Prefixes
 DYNAMIC_CONFIG_RESPONSE_PREFIX = bytes([0x00, 0xCD])  # Response to CMD_GET_DYNAMIC_CONFIG
 

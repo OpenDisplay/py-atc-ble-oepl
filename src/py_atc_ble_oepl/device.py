@@ -19,7 +19,7 @@ from .models.device_types import SCREEN_TYPE_COLOR_SCHEME
 from .models.enums import FitMode, Rotation
 from .models.metadata import DeviceMetadata
 from .protocol.atc import ATCProtocol
-from .protocol.constants import SERVICE_UUID
+from .protocol.constants import CMD_LED_OFF, CMD_LED_ON, SERVICE_UUID
 from .transport.connection import BLEConnection
 
 if TYPE_CHECKING:
@@ -318,6 +318,25 @@ class ATCDevice:
             uploader = BLEImageUploader(self._connection, self.mac_address, progress_callback=progress_callback)
             success = await uploader.upload_image_block_based(dithered, self._metadata.color_scheme, compress=compress)
             return success
+
+    async def flash_led(self, duration: float = 5.0) -> None:
+        """Flash the device LED to physically identify it.
+
+        Turns the LED on, waits for the specified duration, then turns it off.
+        The LED also turns off automatically when the BLE connection closes.
+
+        Args:
+            duration: Seconds to keep LED on (default: 5.0)
+
+        Raises:
+            RuntimeError: If not connected
+        """
+        if not self._connection:
+            raise RuntimeError("Not connected - use device within async context manager")
+        async with self._lock:
+            await self._connection.write_command(CMD_LED_ON)
+            await asyncio.sleep(duration)
+            await self._connection.write_command(CMD_LED_OFF)
 
     @property
     def name(self) -> str | None:

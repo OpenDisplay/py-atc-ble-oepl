@@ -209,6 +209,42 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
     _console.print(tree)
 
 
+# ── led ───────────────────────────────────────────────────────────────────────
+
+
+def _add_led_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    p = subparsers.add_parser("led", help="Flash the device LED to identify it physically")
+    _add_device_options(p)
+    p.add_argument(
+        "--duration",
+        type=float,
+        default=5.0,
+        metavar="SECS",
+        help="Seconds to keep LED on (default: 5.0)",
+    )
+    p.set_defaults(func=_cmd_led)
+
+
+def _cmd_led(args: argparse.Namespace) -> None:
+    _run(_led(args.device, args.timeout, args.duration))
+
+
+async def _led(address: str, timeout: float, duration: float) -> None:
+    device_name: str | None = None
+    try:
+        with _spinner() as progress:
+            task = progress.add_task("Connecting…", total=None)
+            async with ATCDevice(address, auto_interrogate=False, connection_timeout=timeout) as device:
+                device_name = device.name
+                progress.update(task, description=f"LED on for {duration:.0f}s…")
+                await device.flash_led(duration=duration)
+    except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
+        _handle_ble_error(exc)
+
+    target = f"[bold]{device_name}[/bold]" if device_name else f"[cyan]{address}[/cyan]"
+    _console.print(f"LED done → {target}")
+
+
 # ── upload ────────────────────────────────────────────────────────────────────
 
 
@@ -340,6 +376,7 @@ def main() -> None:
 
     _add_scan_parser(subparsers)
     _add_info_parser(subparsers)
+    _add_led_parser(subparsers)
     _add_upload_parser(subparsers)
 
     args = parser.parse_args()
