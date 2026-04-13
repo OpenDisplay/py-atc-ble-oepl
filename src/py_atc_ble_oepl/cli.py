@@ -155,7 +155,6 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
                 "width": caps.width,
                 "height": caps.height,
                 "color_scheme": caps.color_scheme,
-                "rotatebuffer": caps.rotatebuffer,
             }
         if config:
             out["config"] = asdict(config)
@@ -169,7 +168,6 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
         disp = tree.add("[bold]Display[/bold]")
         disp.add(f"Resolution    {caps.width} × {caps.height}")
         disp.add(f"Color         {color_name}")
-        disp.add(f"Rotate buffer {caps.rotatebuffer}")
 
     if config:
         screen_type_name = get_device_type_name(config.screen_type)

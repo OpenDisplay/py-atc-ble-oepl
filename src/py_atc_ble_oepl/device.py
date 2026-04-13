@@ -202,7 +202,6 @@ class ATCDevice:
                     width=self._capabilities.width,
                     height=self._capabilities.height,
                     color_scheme=refined,
-                    rotatebuffer=self._capabilities.rotatebuffer,
                 )
                 _LOGGER.debug(
                     "Refined color_scheme from 0005 value to %d via screen_type %d",
@@ -216,17 +215,15 @@ class ATCDevice:
                     "width": self._capabilities.width,
                     "height": self._capabilities.height,
                     "color_scheme": self._capabilities.color_scheme,
-                    "rotatebuffer": self._capabilities.rotatebuffer,
                 }
             )
 
             _LOGGER.info(
-                "Interrogated device %s: %dx%d, color_scheme=%d, rotate=%d",
+                "Interrogated device %s: %dx%d, color_scheme=%d",
                 self.mac_address,
                 self._capabilities.width,
                 self._capabilities.height,
                 self._capabilities.color_scheme,
-                self._capabilities.rotatebuffer,
             )
 
             return self._capabilities
@@ -283,8 +280,6 @@ class ATCDevice:
 
             _LOGGER.debug("Original image size: %dx%d", img.width, img.height)
 
-            # Determine target dimensions — rotatebuffer is handled internally by the
-            # ATC firmware; we encode at the logical display dimensions as reported.
             target_width = self._metadata.width
             target_height = self._metadata.height
 
@@ -325,11 +320,6 @@ class ATCDevice:
         if self._capabilities:
             return ColorScheme.from_value(self._capabilities.color_scheme)
         return None
-
-    @property
-    def rotatebuffer(self) -> int | None:
-        """Rotation flag: 1=rotate 90°, 0=no rotation (None if not interrogated)."""
-        return self._capabilities.rotatebuffer if self._capabilities else None
 
     @property
     def device_config(self) -> DeviceConfig | None:

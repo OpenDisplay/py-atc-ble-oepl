@@ -23,7 +23,6 @@ class DeviceMetadata:
                 - width: Display width in pixels
                 - height: Display height in pixels
                 - color_scheme: Color scheme code (0-5)
-                - rotatebuffer: Rotation flag (0 or 1)
         """
         self._metadata = raw_metadata
 
@@ -44,15 +43,6 @@ class DeviceMetadata:
             Display height, or 0 if not available
         """
         return self._metadata.get("height", 0)
-
-    @property
-    def rotatebuffer(self) -> int:
-        """Get rotation flag.
-
-        Returns:
-            Rotation flag: 1=rotate 90°, 0=no rotation
-        """
-        return self._metadata.get("rotatebuffer", 0)
 
     @property
     def color_scheme(self) -> int:

@@ -217,7 +217,6 @@ class ATCProtocol:
             width=final_width,
             height=final_height,
             color_scheme=color_scheme,
-            rotatebuffer=1,  # ATC devices always need 90° rotation
         )
 
     async def read_device_config(self, connection: "BLEConnection") -> DeviceConfig:
