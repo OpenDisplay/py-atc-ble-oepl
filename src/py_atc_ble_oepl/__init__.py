@@ -33,7 +33,7 @@ from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_dev
 from .models.enums import FitMode, Rotation
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     # Main API
