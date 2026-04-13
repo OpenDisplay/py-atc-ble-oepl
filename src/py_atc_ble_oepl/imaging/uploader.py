@@ -258,7 +258,7 @@ class BLEImageUploader:
             _LOGGER.warning("Unknown response code: %s", response_code)
             return True
 
-    async def _send_block_data(self, block_id: int):
+    async def _send_block_data(self, block_id: int) -> None:
         """Send block data for specified block ID.
 
         Args:
@@ -291,7 +291,7 @@ class BLEImageUploader:
             crc_block,
             buffer.hex(),
         )
-        block_data = buffer + block_data
+        block_data = bytes(buffer) + block_data
         _LOGGER.debug("Block %d first 20 bytes (with header): %s", block_id, block_data[:20].hex())
 
         # Create packets
@@ -311,7 +311,7 @@ class BLEImageUploader:
         if self._packets:
             await self._send_next_block_part()
 
-    async def _send_next_block_part(self):
+    async def _send_next_block_part(self) -> None:
         """Send block part packet at current index (does not increment)."""
         if self._packet_index < len(self._packets):
             packet = self._packets[self._packet_index]

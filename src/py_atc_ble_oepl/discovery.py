@@ -11,6 +11,7 @@ from .protocol.constants import MANUFACTURER_ID
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
+    from bleak.backends.scanner import AdvertisementData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,9 +50,9 @@ async def discover_atc_devices(timeout: float = 30.0) -> list[DiscoveredDevice]:
         >>> for device in devices:
         ...     print(f"Found {device.name} at {device.mac_address}")
     """
-    discovered = {}  # Use dict to deduplicate by MAC address
+    discovered: dict[str, DiscoveredDevice] = {}
 
-    def detection_callback(device, advertisement_data):
+    def detection_callback(device: "BLEDevice", advertisement_data: "AdvertisementData") -> None:
         """Handle discovered BLE device."""
         mfg_data = advertisement_data.manufacturer_data
         if MANUFACTURER_ID in mfg_data:

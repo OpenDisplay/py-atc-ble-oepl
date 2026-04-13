@@ -235,15 +235,24 @@ class ATCProtocol:
         #         epd_en(I) led_en(I) nfc_en(I) flash_en(I)
         #         adc(H) uart(H)
         (
-            screen_type, hw_type, screen_functions,
+            screen_type,
+            hw_type,
+            screen_functions,
             wh_inv_ble_raw,
             wh_inverted_raw,
-            screen_h, screen_w,
-            screen_h_offset, screen_w_offset,
+            screen_h,
+            screen_w,
+            screen_h_offset,
+            screen_w_offset,
             screen_colors,
-            black_invert_raw, second_color_invert_raw,
-            epd_en_raw, led_en_raw, nfc_en_raw, flash_en_raw,
-            adc_pinout, uart_pinout,
+            black_invert_raw,
+            second_color_invert_raw,
+            epd_en_raw,
+            led_en_raw,
+            nfc_en_raw,
+            flash_en_raw,
+            adc_pinout,
+            uart_pinout,
         ) = struct.unpack_from("<HHHbHHHHHHHHIIIIHH", response, offset=2)
 
         epd_enabled = epd_en_raw != 0
@@ -266,11 +275,20 @@ class ATCProtocol:
             pin_config_sleep, pin_enable, pin_enable_sleep = struct.unpack_from("<BBB", response, offset)
             offset += 3
             epd_pinout = EPDPinout(
-                reset=reset, dc=dc, busy=busy, busy_s=busy_s,
-                cs=cs, cs_s=cs_s, clk=clk, mosi=mosi,
-                enable=enable, enable1=enable1,
-                enable_invert=enable_invert, flash_cs=flash_cs,
-                pin_config_sleep=pin_config_sleep, pin_enable=pin_enable,
+                reset=reset,
+                dc=dc,
+                busy=busy,
+                busy_s=busy_s,
+                cs=cs,
+                cs_s=cs_s,
+                clk=clk,
+                mosi=mosi,
+                enable=enable,
+                enable1=enable1,
+                enable_invert=enable_invert,
+                flash_cs=flash_cs,
+                pin_config_sleep=pin_config_sleep,
+                pin_enable=pin_enable,
                 pin_enable_sleep=pin_enable_sleep,
             )
 
@@ -296,8 +314,15 @@ class ATCProtocol:
 
         _LOGGER.debug(
             "Device config for %s: hw_type=0x%04x screen=%dx%d colors=%d epd=%s led=%s nfc=%s flash=%s",
-            connection.mac_address, hw_type, screen_w, screen_h, screen_colors,
-            epd_enabled, led_enabled, nfc_enabled, flash_enabled,
+            connection.mac_address,
+            hw_type,
+            screen_w,
+            screen_h,
+            screen_colors,
+            epd_enabled,
+            led_enabled,
+            nfc_enabled,
+            flash_enabled,
         )
 
         return DeviceConfig(
@@ -324,4 +349,3 @@ class ATCProtocol:
             nfc_pinout=nfc_pinout,
             flash_pinout=flash_pinout,
         )
-

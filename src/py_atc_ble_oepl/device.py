@@ -1,5 +1,7 @@
 """Main ATC BLE device class."""
 
+from __future__ import annotations
+
 import asyncio
 import io
 import logging
@@ -20,6 +22,8 @@ from .protocol.constants import SERVICE_UUID
 from .transport.connection import BLEConnection
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -160,7 +164,12 @@ class ATCDevice:
             await self.interrogate()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit - disconnect."""
         if self._connection:
             await self._connection.__aexit__(exc_type, exc_val, exc_tb)
@@ -190,6 +199,7 @@ class ATCDevice:
         async with self._lock:
             # Query display info and dynamic config using persistent connection
             protocol = self._connection.protocol
+            assert protocol is not None
             self._capabilities = await protocol.interrogate_device(self._connection)
             self._device_config = await protocol.read_device_config(self._connection)
 
@@ -270,7 +280,10 @@ class ATCDevice:
                 else:
                     raise ATCError("Device not interrogated. Call interrogate() first or set auto_interrogate=True")
 
+            assert self._metadata is not None
+
             # Load image
+            img: Image.Image
             if isinstance(image_data, bytes):
                 img = Image.open(io.BytesIO(image_data))
             elif isinstance(image_data, str):

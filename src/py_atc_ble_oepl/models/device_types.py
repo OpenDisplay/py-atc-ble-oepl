@@ -4,14 +4,53 @@
 # Used to refine the color_scheme reported by the 0005 response, which only
 # gives a color count (1/2/3) and cannot distinguish BWR from BWY.
 SCREEN_TYPE_COLOR_SCHEME: dict[int, int] = {
-    1: 2, 2: 2, 3: 2, 4: 0, 5: 2, 6: 2,           # BWY, BWY, BWY, MONO, BWY, BWY
-    7: 1, 8: 1, 9: 1, 10: 0, 11: 1, 12: 1,          # BWR×3, MONO, BWR×2
-    13: 0, 14: 1, 15: 1, 16: 1, 17: 3, 18: 1,       # MONO, BWR×3, BWRY, BWR
-    19: 1, 20: 1, 21: 1, 22: 1, 23: 1, 24: 1,       # BWR×6
-    25: 0, 26: 0, 27: 1, 28: 1, 29: 0, 30: 0,       # MONO×2, BWR×2, MONO×2
-    31: 2, 32: 0, 33: 1, 34: 1, 35: 2,              # BWY, MONO, BWR×2, BWY
-    36: 3, 37: 3, 38: 3, 39: 3, 40: 3, 41: 3,       # BWRY×6
-    42: 2, 43: 1, 44: 1, 45: 1, 46: 1, 47: 1,       # BWY, BWR×5
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 0,
+    5: 2,
+    6: 2,  # BWY, BWY, BWY, MONO, BWY, BWY
+    7: 1,
+    8: 1,
+    9: 1,
+    10: 0,
+    11: 1,
+    12: 1,  # BWR×3, MONO, BWR×2
+    13: 0,
+    14: 1,
+    15: 1,
+    16: 1,
+    17: 3,
+    18: 1,  # MONO, BWR×3, BWRY, BWR
+    19: 1,
+    20: 1,
+    21: 1,
+    22: 1,
+    23: 1,
+    24: 1,  # BWR×6
+    25: 0,
+    26: 0,
+    27: 1,
+    28: 1,
+    29: 0,
+    30: 0,  # MONO×2, BWR×2, MONO×2
+    31: 2,
+    32: 0,
+    33: 1,
+    34: 1,
+    35: 2,  # BWY, MONO, BWR×2, BWY
+    36: 3,
+    37: 3,
+    38: 3,
+    39: 3,
+    40: 3,
+    41: 3,  # BWRY×6
+    42: 2,
+    43: 1,
+    44: 1,
+    45: 1,
+    46: 1,
+    47: 1,  # BWY, BWR×5
 }
 
 DEVICE_TYPES: dict[int, str] = {

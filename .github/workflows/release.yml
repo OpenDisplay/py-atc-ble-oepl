@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
@@ -18,24 +22,15 @@ jobs:
         id: release
         with:
           release-type: python
-          package-name: py-atc-ble
-          bump-minor-pre-major: true
-          bump-patch-for-minor-pre-major: true
 
       # The following steps only run if a release was created
       - name: Checkout code
         if: ${{ steps.release.outputs.release_created }}
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        if: ${{ steps.release.outputs.release_created }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+        uses: actions/checkout@v6
 
       - name: Install uv
         if: ${{ steps.release.outputs.release_created }}
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
 
       - name: Install dependencies
         if: ${{ steps.release.outputs.release_created }}

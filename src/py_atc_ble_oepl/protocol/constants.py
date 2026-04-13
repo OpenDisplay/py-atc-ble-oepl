@@ -5,8 +5,8 @@ MANUFACTURER_ID = 0x1337  # 4919 decimal
 SERVICE_UUID = "00001337-0000-1000-8000-00805f9b34fb"
 
 # Protocol Commands
-CMD_GET_DISPLAY_INFO = bytes([0x00, 0x05])   # Query device display capabilities
-CMD_GET_DYNAMIC_CONFIG = bytes([0x00, 0x11]) # Read full device settings
+CMD_GET_DISPLAY_INFO = bytes([0x00, 0x05])  # Query device display capabilities
+CMD_GET_DYNAMIC_CONFIG = bytes([0x00, 0x11])  # Read full device settings
 
 # Protocol Response Prefixes
 DYNAMIC_CONFIG_RESPONSE_PREFIX = bytes([0x00, 0xCD])  # Response to CMD_GET_DYNAMIC_CONFIG

@@ -33,7 +33,7 @@ class DeviceMetadata:
         Returns:
             Display width, or 0 if not available
         """
-        return self._metadata.get("width", 0)
+        return int(self._metadata.get("width", 0))
 
     @property
     def height(self) -> int:
@@ -42,7 +42,7 @@ class DeviceMetadata:
         Returns:
             Display height, or 0 if not available
         """
-        return self._metadata.get("height", 0)
+        return int(self._metadata.get("height", 0))
 
     @property
     def color_scheme(self) -> int:
@@ -57,7 +57,7 @@ class DeviceMetadata:
                 - 4: BWGBRY (6-color)
                 - 5: GRAYSCALE_4 (4-level grayscale)
         """
-        return self._metadata.get("color_scheme", 0)
+        return int(self._metadata.get("color_scheme", 0))
 
     @property
     def hw_type(self) -> int:
@@ -66,7 +66,7 @@ class DeviceMetadata:
         Returns:
             Hardware type code, or 0 if not available
         """
-        return self._metadata.get("hw_type", 0)
+        return int(self._metadata.get("hw_type", 0))
 
     @property
     def fw_version(self) -> int:
@@ -75,7 +75,7 @@ class DeviceMetadata:
         Returns:
             Firmware version number, or 0 if not available
         """
-        return self._metadata.get("fw_version", 0)
+        return int(self._metadata.get("fw_version", 0))
 
     def formatted_fw_version(self) -> str | None:
         """Return firmware version formatted as hex string.

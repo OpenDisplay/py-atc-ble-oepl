@@ -28,7 +28,7 @@ from .models.enums import FitMode, Rotation
 _T = TypeVar("_T")
 
 _console = Console(stderr=True)  # status, spinners, tables, errors → stderr
-_stdout = Console()               # structured data (--json output) → stdout
+_stdout = Console()  # structured data (--json output) → stdout
 
 _DITHER_CHOICES: dict[str, DitherMode] = {m.name.lower().replace("_", "-"): m for m in DitherMode}
 _FIT_CHOICES: dict[str, FitMode] = {m.name.lower(): m for m in FitMode}
@@ -195,7 +195,7 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
             else:
                 branch = hw.add(f"{label}           [green]enabled[/green]")
                 if pinout:
-                    for k, v in asdict(pinout).items():  # type: ignore[arg-type]
+                    for k, v in asdict(pinout).items():
                         branch.add(f"{k}: {v}")
 
     _console.print(tree)

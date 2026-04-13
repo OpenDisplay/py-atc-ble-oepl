@@ -1,5 +1,7 @@
 """BLE connection management using pure Bleak."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from typing import TYPE_CHECKING
@@ -11,6 +13,9 @@ from bleak_retry_connector import BleakClientWithServiceCache, establish_connect
 from ..exceptions import BLEConnectionError, BLEProtocolError, BLETimeoutError
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
+    from bleak.backends.characteristic import BleakGATTCharacteristic
     from bleak.backends.device import BLEDevice
 
     from ..protocol.atc import ATCProtocol
@@ -64,7 +69,7 @@ class BLEConnection:
         self.use_services_cache = use_services_cache
 
         self.client: BleakClient | None = None
-        self.write_char = None
+        self.write_char: BleakGATTCharacteristic | None = None
         self._response_queue: asyncio.Queue[bytes] = asyncio.Queue()
         self._notification_active = False
 
@@ -99,6 +104,7 @@ class BLEConnection:
                 raise BLEConnectionError(f"Service {self.service_uuid} not found on {self.mac_address}")
 
             # Enable notifications for protocol responses
+            assert self.write_char is not None
             await self.client.start_notify(self.write_char, self._notification_callback)
             self._notification_active = True
 
@@ -115,7 +121,12 @@ class BLEConnection:
             await self._cleanup()
             raise BLETimeoutError(f"Connection timeout for {self.mac_address}") from e
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Clean up BLE connection."""
         await self._cleanup()
 
@@ -147,7 +158,7 @@ class BLEConnection:
 
         return device
 
-    async def _cleanup(self):
+    async def _cleanup(self) -> None:
         """Clean up connection resources."""
         if self.client and self.client.is_connected:
             if self._notification_active and self.write_char:
@@ -194,7 +205,7 @@ class BLEConnection:
             _LOGGER.error("Error resolving characteristic for %s: %s", self.mac_address, e)
             return False
 
-    def _notification_callback(self, sender, data: bytearray) -> None:
+    def _notification_callback(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
         """Handle notification from device.
 
         Args:
@@ -218,6 +229,7 @@ class BLEConnection:
         if not self.write_char:
             raise BLEProtocolError("Write characteristic not available")
 
+        assert self.client is not None
         await self.client.write_gatt_char(self.write_char, data, response=False)
 
     async def write_command_with_response(self, command: bytes, timeout: float = 10.0) -> bytes:
