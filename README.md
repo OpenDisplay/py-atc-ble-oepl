@@ -1,10 +1,10 @@
-# py-atc-ble-oepl
-
-Python library for interacting with [ATC BLE firmware](https://atc1441.github.io/ATC_GICISKY_Paper_Image_Upload.html) over Bluetooth Low Energy.
-
 [![Tests](https://github.com/OpenDisplay-org/py-atc-ble-oepl/actions/workflows/test.yml/badge.svg)](https://github.com/OpenDisplay-org/py-atc-ble-oepl/actions/workflows/test.yml)
 [![PyPI](https://img.shields.io/pypi/v/py-atc-ble-oepl)](https://pypi.org/project/py-atc-ble-oepl/)
 [![Python Version](https://img.shields.io/pypi/pyversions/py-atc-ble-oepl)](https://pypi.org/project/py-atc-ble-oepl/)
+
+# py-atc-ble-oepl
+
+Python library for interacting with [ATC BLE firmware](https://atc1441.github.io/ATC_GICISKY_Paper_Image_Upload.html) over Bluetooth Low Energy.
 
 ## Installation
 
