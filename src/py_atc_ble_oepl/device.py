@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from epaper_dithering import ColorScheme, DitherMode, dither_image
@@ -245,6 +246,7 @@ class ATCDevice:
         compress: bool = True,
         fit: FitMode = FitMode.CONTAIN,
         rotate: Rotation = Rotation.ROTATE_0,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> bool:
         """Upload image to device display.
 
@@ -313,7 +315,7 @@ class ATCDevice:
             if not self._connection:
                 raise RuntimeError("Not connected - use device within async context manager")
 
-            uploader = BLEImageUploader(self._connection, self.mac_address)
+            uploader = BLEImageUploader(self._connection, self.mac_address, progress_callback=progress_callback)
             success = await uploader.upload_image_block_based(dithered, self._metadata.color_scheme, compress=compress)
             return success
 

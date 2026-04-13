@@ -2,7 +2,9 @@
 
 import asyncio
 import logging
+import math
 import zlib
+from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -48,19 +50,27 @@ class BLEImageUploader:
     ATC BLE e-paper display tags.
     """
 
-    def __init__(self, connection: "BLEConnection", mac_address: str):
+    def __init__(
+        self,
+        connection: "BLEConnection",
+        mac_address: str,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ):
         """Initialize image uploader.
 
         Args:
             connection: Active BLE connection to device
             mac_address: Device MAC address for logging
+            progress_callback: Optional callback(bytes_sent, total_bytes) called after each block
         """
         self.connection = connection
         self.mac_address = mac_address
+        self._progress_callback = progress_callback
 
         # Upload state
         self._img_array: bytes = b""
         self._img_array_len: int = 0
+        self._total_blocks: int = 0
         self._packets: list[bytearray] = []
         self._packet_index: int = 0
         self._current_block_id: int | None = None
@@ -96,6 +106,7 @@ class BLEImageUploader:
 
             self._img_array = pixel_array
             self._img_array_len = len(self._img_array)
+            self._total_blocks = math.ceil(self._img_array_len / BLE_BLOCK_SIZE)
             self._upload_complete.clear()
             self._upload_error = None
 
@@ -310,6 +321,10 @@ class BLEImageUploader:
         self._packet_index = 0
         if self._packets:
             await self._send_next_block_part()
+
+        if self._progress_callback is not None:
+            sent = min((block_id + 1) * BLE_BLOCK_SIZE, self._img_array_len)
+            self._progress_callback(sent, self._img_array_len)
 
     async def _send_next_block_part(self) -> None:
         """Send block part packet at current index (does not increment)."""

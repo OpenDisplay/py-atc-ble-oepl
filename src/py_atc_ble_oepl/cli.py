@@ -13,9 +13,10 @@ from typing import Any, NoReturn, TypeVar
 
 from epaper_dithering import DitherMode
 from PIL import Image, UnidentifiedImageError
-from rich.console import Console
+from rich.console import Console, ConsoleOptions, RenderResult
+from rich.live import Live
 from rich.logging import RichHandler
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 from rich.table import Table
 from rich.tree import Tree
 
@@ -269,18 +270,53 @@ async def _upload(
 
     device_name: str | None = None
     try:
-        with _spinner() as progress:
-            task = progress.add_task("Connecting…", total=None)
+        spinner_progress = Progress(
+            SpinnerColumn(finished_text="[green]✓[/green]"),
+            TextColumn("{task.description}"),
+            console=_console,
+        )
+        bar_progress = Progress(
+            BarColumn(),
+            TaskProgressColumn(),
+            console=_console,
+        )
+
+        class _Display:
+            def __rich_console__(self, _con: Console, _opts: ConsoleOptions) -> RenderResult:
+                yield spinner_progress
+                if any(t.visible for t in bar_progress.tasks):
+                    yield bar_progress
+
+        with Live(_Display(), console=_console, refresh_per_second=10, transient=False):
+            connect_task = spinner_progress.add_task("Connecting…", total=None)
+            upload_task = spinner_progress.add_task("Uploading…", total=None, visible=False)
+            refresh_task = spinner_progress.add_task("Refreshing display…", total=None, visible=False)
+            bar_task = bar_progress.add_task("", total=None, visible=False)
+
             async with ATCDevice(address, connection_timeout=timeout) as device:
                 device_name = device.name
-                progress.update(task, description="Uploading…")
+                spinner_progress.update(connect_task, visible=False)
+                spinner_progress.update(upload_task, visible=True)
+                bar_progress.update(bar_task, visible=True)
+
+                def on_progress(sent: int, total: int) -> None:
+                    bar_progress.update(bar_task, total=total, completed=sent)
+                    if sent == total:
+                        bar_progress.update(bar_task, visible=False)
+                        spinner_progress.update(upload_task, visible=False)
+                        spinner_progress.update(refresh_task, visible=True)
+
                 success = await device.upload_image(
                     image,
                     dither_mode=dither_mode,
                     compress=compress,
                     fit=fit,
                     rotate=rotate,
+                    progress_callback=on_progress,
                 )
+
+            spinner_progress.update(refresh_task, visible=False)
+            spinner_progress.update(upload_task, visible=True, description="[green]Done.[/green]", total=1, completed=1)
     except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
         _handle_ble_error(exc)
 
