@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-atc-ble-oepl"
-version = "0.2.0"
+version = "0.2.1"
 description = "Python module for interacting with ATC BLE firmware on OEPL e-paper tags"
 readme = "README.md"
 license = "Apache-2.0"

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.2.0...v0.2.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* update pyproject.toml ([61e456b](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/61e456bd75a67bfa3c1e18c9b34919b09b707c91))
+
+
+### Documentation
+
+* add attribution ([fed8346](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/fed83462e446e2a0aaa9bfc290c7329381989bd4))
+
 ## [0.2.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.1.0...v0.2.0) (2026-04-13)
 
 
