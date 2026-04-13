@@ -28,6 +28,9 @@ from .exceptions import (
     ProtocolError,
 )
 from .models.capabilities import DeviceCapabilities
+from .models.device_config import DeviceConfig
+from .models.device_types import DEVICE_TYPES, get_device_type_name
+from .models.enums import FitMode, Rotation
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
 __version__ = "0.1.0"
@@ -39,9 +42,16 @@ __all__ = [
     # Data structures
     "DiscoveredDevice",
     "DeviceCapabilities",
+    "DeviceConfig",
     # Enums (re-exported from epaper_dithering)
     "ColorScheme",
     "DitherMode",
+    # Enums (image transforms)
+    "FitMode",
+    "Rotation",
+    # Device type map
+    "DEVICE_TYPES",
+    "get_device_type_name",
     # Exceptions
     "ATCError",
     "BLEConnectionError",

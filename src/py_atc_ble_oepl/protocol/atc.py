@@ -8,7 +8,16 @@ from typing import TYPE_CHECKING
 from ..exceptions import BLEProtocolError
 from ..models.advertising import AdvertisingData
 from ..models.capabilities import DeviceCapabilities
-from .constants import BLE_MIN_RESPONSE_LENGTH, CMD_GET_DISPLAY_INFO, CMD_INIT, INIT_DELAY_SECONDS
+from ..models.device_config import DeviceConfig, EPDPinout, FlashPinout, LEDPinout, NFCPinout
+from .constants import (
+    BLE_MIN_RESPONSE_LENGTH,
+    CMD_GET_DISPLAY_INFO,
+    CMD_GET_DYNAMIC_CONFIG,
+    CMD_INIT,
+    DYNAMIC_CONFIG_MIN_LENGTH,
+    DYNAMIC_CONFIG_RESPONSE_PREFIX,
+    INIT_DELAY_SECONDS,
+)
 
 if TYPE_CHECKING:
     from ..transport.connection import BLEConnection
@@ -209,6 +218,132 @@ class ATCProtocol:
             height=final_height,
             color_scheme=color_scheme,
             rotatebuffer=1,  # ATC devices always need 90° rotation
+        )
+
+    async def read_device_config(self, connection: "BLEConnection") -> DeviceConfig:
+        """Read full device configuration using CMD_GET_DYNAMIC_CONFIG (0x0011).
+
+        Sends 0x0011 and parses the 0x00CD response which contains all device
+        settings including hw_type (OEPL device type), screen dimensions/offsets,
+        color config, and optional GPIO pinout sections.
+
+        Args:
+            connection: Active BLE connection to device
+
+        Returns:
+            DeviceConfig with all parsed settings
+
+        Raises:
+            BLEProtocolError: If the response is invalid or too short
+        """
+        response = await connection.write_command_with_response(CMD_GET_DYNAMIC_CONFIG)
+
+        if len(response) < DYNAMIC_CONFIG_MIN_LENGTH:
+            raise BLEProtocolError(
+                f"Dynamic config response too short: {len(response)} bytes"
+                f" (expected at least {DYNAMIC_CONFIG_MIN_LENGTH})"
+            )
+
+        if response[:2] != DYNAMIC_CONFIG_RESPONSE_PREFIX:
+            raise BLEProtocolError(
+                f"Unexpected response prefix: {response[:2].hex()} (expected {DYNAMIC_CONFIG_RESPONSE_PREFIX.hex()})"
+            )
+
+        # Parse base config (43 bytes starting at offset 2, after 00CD prefix)
+        # Layout: screen_type(H) hw_type(H) functions(H) wh_inv_ble(B)
+        #         wh_inv(H) h(H) w(H) h_off(H) w_off(H) colors(H)
+        #         black_inv(H) color_inv(H)
+        #         epd_en(I) led_en(I) nfc_en(I) flash_en(I)
+        #         adc(H) uart(H)
+        (
+            screen_type, hw_type, screen_functions,
+            wh_inv_ble_raw,
+            wh_inverted_raw,
+            screen_h, screen_w,
+            screen_h_offset, screen_w_offset,
+            screen_colors,
+            black_invert_raw, second_color_invert_raw,
+            epd_en_raw, led_en_raw, nfc_en_raw, flash_en_raw,
+            adc_pinout, uart_pinout,
+        ) = struct.unpack_from("<HHHbHHHHHHHHIIIIHH", response, offset=2)
+
+        epd_enabled = epd_en_raw != 0
+        led_enabled = led_en_raw != 0
+        nfc_enabled = nfc_en_raw != 0
+        flash_enabled = flash_en_raw != 0
+
+        offset = 2 + struct.calcsize("<HHHbHHHHHHHHIIIIHH")
+
+        epd_pinout: EPDPinout | None = None
+        if epd_enabled and offset + 26 <= len(response):
+            # 10× uint16, 1× uint8, 1× uint16, 3× uint8  = 26 bytes
+            epd_regs = struct.unpack_from("<HHHHHHHHHH", response, offset)
+            reset, dc, busy, busy_s, cs, cs_s, clk, mosi, enable, enable1 = epd_regs
+            offset += struct.calcsize("<HHHHHHHHHH")
+            enable_invert = struct.unpack_from("<B", response, offset)[0] != 0
+            offset += 1
+            flash_cs = struct.unpack_from("<H", response, offset)[0]
+            offset += 2
+            pin_config_sleep, pin_enable, pin_enable_sleep = struct.unpack_from("<BBB", response, offset)
+            offset += 3
+            epd_pinout = EPDPinout(
+                reset=reset, dc=dc, busy=busy, busy_s=busy_s,
+                cs=cs, cs_s=cs_s, clk=clk, mosi=mosi,
+                enable=enable, enable1=enable1,
+                enable_invert=enable_invert, flash_cs=flash_cs,
+                pin_config_sleep=pin_config_sleep, pin_enable=pin_enable,
+                pin_enable_sleep=pin_enable_sleep,
+            )
+
+        led_pinout: LEDPinout | None = None
+        if led_enabled and offset + 7 <= len(response):
+            r, g, b = struct.unpack_from("<HHH", response, offset)
+            offset += 6
+            inverted = struct.unpack_from("<B", response, offset)[0] != 0
+            offset += 1
+            led_pinout = LEDPinout(r=r, g=g, b=b, inverted=inverted)
+
+        nfc_pinout: NFCPinout | None = None
+        if nfc_enabled and offset + 8 <= len(response):
+            sda, scl, cs, irq = struct.unpack_from("<HHHH", response, offset)
+            offset += 8
+            nfc_pinout = NFCPinout(sda=sda, scl=scl, cs=cs, irq=irq)
+
+        flash_pinout: FlashPinout | None = None
+        if flash_enabled and offset + 8 <= len(response):
+            cs, clk, miso, mosi = struct.unpack_from("<HHHH", response, offset)
+            offset += 8
+            flash_pinout = FlashPinout(cs=cs, clk=clk, miso=miso, mosi=mosi)
+
+        _LOGGER.debug(
+            "Device config for %s: hw_type=0x%04x screen=%dx%d colors=%d epd=%s led=%s nfc=%s flash=%s",
+            connection.mac_address, hw_type, screen_w, screen_h, screen_colors,
+            epd_enabled, led_enabled, nfc_enabled, flash_enabled,
+        )
+
+        return DeviceConfig(
+            screen_type=screen_type,
+            hw_type=hw_type,
+            screen_functions=screen_functions,
+            wh_inverted_ble=wh_inv_ble_raw != 0,
+            wh_inverted=wh_inverted_raw != 0,
+            screen_h=screen_h,
+            screen_w=screen_w,
+            screen_h_offset=screen_h_offset,
+            screen_w_offset=screen_w_offset,
+            screen_colors=screen_colors,
+            black_invert=black_invert_raw != 0,
+            second_color_invert=second_color_invert_raw != 0,
+            epd_enabled=epd_enabled,
+            led_enabled=led_enabled,
+            nfc_enabled=nfc_enabled,
+            flash_enabled=flash_enabled,
+            adc_pinout=adc_pinout,
+            uart_pinout=uart_pinout,
+            epd_pinout=epd_pinout,
+            led_pinout=led_pinout,
+            nfc_pinout=nfc_pinout,
+            flash_pinout=flash_pinout,
         )
 
     async def initialize_connection(self, connection: "BLEConnection") -> None:

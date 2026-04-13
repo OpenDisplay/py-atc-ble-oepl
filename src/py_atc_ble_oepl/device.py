@@ -11,6 +11,8 @@ from PIL import Image
 from .exceptions import ATCError
 from .imaging.uploader import BLEImageUploader
 from .models.capabilities import DeviceCapabilities
+from .models.device_config import DeviceConfig
+from .models.enums import FitMode, Rotation
 from .models.metadata import DeviceMetadata
 from .protocol.atc import ATCProtocol
 from .protocol.constants import SERVICE_UUID
@@ -20,6 +22,67 @@ if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+_TRANSPOSE_MAP = {
+    Rotation.ROTATE_90: Image.Transpose.ROTATE_90,
+    Rotation.ROTATE_180: Image.Transpose.ROTATE_180,
+    Rotation.ROTATE_270: Image.Transpose.ROTATE_270,
+}
+
+
+def _apply_image_transform(img: Image.Image, rotate: Rotation, fit: FitMode, w: int, h: int) -> Image.Image:
+    """Apply user rotation then fit/resize to target dimensions.
+
+    Args:
+        img: Source PIL Image
+        rotate: User-requested rotation (applied before fit)
+        fit: How to map image to target dimensions
+        w: Target width in pixels
+        h: Target height in pixels
+
+    Returns:
+        Transformed PIL Image at exactly (w, h) pixels
+    """
+    # Step 1 — user rotation
+    if rotate != Rotation.ROTATE_0:
+        img = img.transpose(_TRANSPOSE_MAP[rotate])
+
+    # Step 2 — fit to (w, h)
+    img = img.convert("RGB")
+
+    if fit == FitMode.STRETCH:
+        return img.resize((w, h), Image.Resampling.LANCZOS)
+
+    if fit == FitMode.CONTAIN:
+        img.thumbnail((w, h), Image.Resampling.LANCZOS)
+        canvas = Image.new("RGB", (w, h), (255, 255, 255))
+        paste_x = (w - img.width) // 2
+        paste_y = (h - img.height) // 2
+        canvas.paste(img, (paste_x, paste_y))
+        return canvas
+
+    if fit == FitMode.COVER:
+        scale = max(w / img.width, h / img.height)
+        new_w = int(img.width * scale)
+        new_h = int(img.height * scale)
+        img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        left = (new_w - w) // 2
+        top = (new_h - h) // 2
+        return img.crop((left, top, left + w, top + h))
+
+    # FitMode.CROP — center-crop at native resolution, pad with white if smaller
+    canvas = Image.new("RGB", (w, h), (255, 255, 255))
+    paste_x = (w - img.width) // 2
+    paste_y = (h - img.height) // 2
+    # Crop source if larger than target
+    src_x = max(0, -paste_x)
+    src_y = max(0, -paste_y)
+    src_w = min(img.width, w)
+    src_h = min(img.height, h)
+    dest_x = max(0, paste_x)
+    dest_y = max(0, paste_y)
+    canvas.paste(img.crop((src_x, src_y, src_x + src_w, src_y + src_h)), (dest_x, dest_y))
+    return canvas
 
 
 class ATCDevice:
@@ -75,6 +138,7 @@ class ATCDevice:
         self._auto_interrogate = auto_interrogate
         self._timeout = connection_timeout
         self._capabilities: DeviceCapabilities | None = None
+        self._device_config: DeviceConfig | None = None
         self._metadata: DeviceMetadata | None = None
         self._connection: BLEConnection | None = None
         self._lock = asyncio.Lock()
@@ -123,9 +187,10 @@ class ATCDevice:
             raise RuntimeError("Not connected - use device within async context manager")
 
         async with self._lock:
-            # Query display info using persistent connection
+            # Query display info and dynamic config using persistent connection
             protocol = self._connection.protocol
             self._capabilities = await protocol.interrogate_device(self._connection)
+            self._device_config = await protocol.read_device_config(self._connection)
 
             # Build metadata for image processing
             self._metadata = DeviceMetadata(
@@ -153,6 +218,8 @@ class ATCDevice:
         image_data: bytes | str | Image.Image,
         dither_mode: DitherMode = DitherMode.ORDERED,
         compress: bool = True,
+        fit: FitMode = FitMode.CONTAIN,
+        rotate: Rotation = Rotation.ROTATE_0,
     ) -> bool:
         """Upload image to device display.
 
@@ -198,19 +265,18 @@ class ATCDevice:
 
             _LOGGER.debug("Original image size: %dx%d", img.width, img.height)
 
-            # Resize to device dimensions
+            # Determine target dimensions
             target_width = self._metadata.width
             target_height = self._metadata.height
 
-            # Apply 90° rotation for ATC devices if needed
+            # Apply device rotatebuffer (swap target dims so encoding gets correct orientation)
             if self._metadata.rotatebuffer == 1:
                 _LOGGER.debug("Applying 90° rotation for ATC device")
-                img = img.transpose(Image.Transpose.ROTATE_90)
-                # Swap dimensions after rotation
                 target_width, target_height = target_height, target_width
 
-            img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
-            _LOGGER.debug("Resized to %dx%d for device", target_width, target_height)
+            # Apply user rotation + fit to target dimensions
+            img = _apply_image_transform(img, rotate, fit, target_width, target_height)
+            _LOGGER.debug("Transformed to %dx%d for device", img.width, img.height)
 
             # Apply dithering using epaper_dithering
             color_scheme = ColorScheme.from_value(self._metadata.color_scheme)
@@ -250,3 +316,8 @@ class ATCDevice:
     def rotatebuffer(self) -> int | None:
         """Rotation flag: 1=rotate 90°, 0=no rotation (None if not interrogated)."""
         return self._capabilities.rotatebuffer if self._capabilities else None
+
+    @property
+    def device_config(self) -> DeviceConfig | None:
+        """Full device configuration from dynamic config read (None if not interrogated)."""
+        return self._device_config
