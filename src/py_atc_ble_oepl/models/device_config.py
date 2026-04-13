@@ -65,10 +65,21 @@ class DeviceConfig:
         screen_type: EPD panel type identifier
         hw_type: OEPL hardware type (maps to DEVICE_TYPES)
         screen_functions: Feature flags bitmask
-        wh_inverted_ble: W/H inversion flag used by BLE protocol
-        wh_inverted: W/H inversion flag used by device config
-        screen_h: Configured screen height
-        screen_w: Configured screen width
+        wh_inverted_ble: When True, the BLE host must swap W↔H to get logical
+            display dimensions. ``screen_w``/``screen_h`` are raw hardware
+            values; apply this flag to derive the correct upload canvas size.
+            In practice, ``DeviceCapabilities.width``/``height`` (from the
+            0x0005 interrogation) already have this swap applied and should
+            be preferred over recomputing from ``screen_w``/``screen_h``.
+        wh_inverted: Firmware-internal orientation flag. Controls how the
+            device drives the EPD hardware. Does NOT affect the dimensions
+            sent over BLE — use ``wh_inverted_ble`` for that.
+        screen_h: Raw hardware screen height (pre-swap). If ``wh_inverted_ble``
+            is True, the logical height seen by the BLE host is ``screen_w``,
+            not this value.
+        screen_w: Raw hardware screen width (pre-swap). If ``wh_inverted_ble``
+            is True, the logical width seen by the BLE host is ``screen_h``,
+            not this value.
         screen_h_offset: Screen height offset
         screen_w_offset: Screen width offset
         screen_colors: Number of color planes (1=BW, 2=BWR/BWY, 3=BWRY)

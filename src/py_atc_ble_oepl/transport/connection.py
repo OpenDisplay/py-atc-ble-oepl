@@ -70,6 +70,7 @@ class BLEConnection:
 
         self.client: BleakClient | None = None
         self.write_char: BleakGATTCharacteristic | None = None
+        self.device_name: str | None = None
         self._response_queue: asyncio.Queue[bytes] = asyncio.Queue()
         self._notification_active = False
 
@@ -80,6 +81,7 @@ class BLEConnection:
             device = await self._discover_device()
             if not device:
                 raise BLEConnectionError(f"BLE device not found: {self.mac_address}")
+            self.device_name = device.name or None
 
             # Establish connection with retry logic and service caching
             _LOGGER.debug(

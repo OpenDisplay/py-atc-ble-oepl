@@ -138,6 +138,7 @@ def _cmd_info(args: argparse.Namespace) -> None:
 
 
 async def _info(address: str, timeout: float, output_json: bool) -> None:
+    device_name: str | None = None
     try:
         with _spinner() as progress:
             task = progress.add_task("Connecting…", total=None)
@@ -145,6 +146,7 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
                 progress.update(task, description="Reading info…")
                 caps = device._capabilities
                 config = device.device_config
+                device_name = device.name
     except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
         _handle_ble_error(exc)
 
@@ -161,7 +163,12 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
         _stdout.print_json(json.dumps(out))
         return
 
-    tree = Tree(f"[bold cyan]{address}[/bold cyan]", guide_style="cyan dim")
+    label = (
+        f"[bold]{device_name}[/bold]  [dim cyan]{address}[/dim cyan]"
+        if device_name
+        else f"[bold cyan]{address}[/bold cyan]"
+    )
+    tree = Tree(label, guide_style="cyan dim")
 
     if caps:
         color_name = _COLOR_SCHEME_NAMES.get(caps.color_scheme, str(caps.color_scheme))
@@ -260,10 +267,12 @@ async def _upload(
     except UnidentifiedImageError:
         _error(f"Cannot open image (unsupported format): {image_path}")
 
+    device_name: str | None = None
     try:
         with _spinner() as progress:
             task = progress.add_task("Connecting…", total=None)
             async with ATCDevice(address, connection_timeout=timeout) as device:
+                device_name = device.name
                 progress.update(task, description="Uploading…")
                 success = await device.upload_image(
                     image,
@@ -275,8 +284,9 @@ async def _upload(
     except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
         _handle_ble_error(exc)
 
+    target = f"[bold]{device_name}[/bold]" if device_name else f"[cyan]{address}[/cyan]"
     if success:
-        _console.print("Upload complete.")
+        _console.print(f"Upload complete → {target}")
     else:
         _error("Upload failed.")
 

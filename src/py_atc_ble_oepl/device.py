@@ -318,6 +318,11 @@ class ATCDevice:
             return success
 
     @property
+    def name(self) -> str | None:
+        """Device BLE name from advertisement (None if not connected)."""
+        return self._connection.device_name if self._connection else None
+
+    @property
     def width(self) -> int | None:
         """Display width in pixels (None if not interrogated)."""
         return self._capabilities.width if self._capabilities else None
