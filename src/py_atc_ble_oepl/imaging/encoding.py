@@ -142,7 +142,7 @@ def convert_image_to_bytes(image: Image.Image, color_scheme: int = 0, compressed
         compressed_data += the_compressor.flush()
         return (
             BLEDataType.COMPRESSED.value,
-            struct.pack("<I", len(buffer)) + compressed_data,
+            struct.pack("<I", len(bpp_array)) + compressed_data,
         )
 
     return (

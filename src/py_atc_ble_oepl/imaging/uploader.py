@@ -101,7 +101,7 @@ class BLEImageUploader:
             # Send data info to initiate upload
             data_info = create_data_info(
                 255,  # checksum placeholder
-                zlib.crc32(self._img_array) & 0xFFFFFFF,
+                zlib.crc32(self._img_array) & 0xFFFFFFFF,
                 self._img_array_len,
                 data_type,
                 0,  # data_type_argument

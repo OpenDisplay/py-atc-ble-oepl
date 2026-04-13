@@ -193,8 +193,8 @@ class ATCProtocol:
         )
 
         # Apply inversion if needed
-        final_width = width if wh_inverted else height
-        final_height = height if wh_inverted else width
+        final_width = height if wh_inverted else width
+        final_height = width if wh_inverted else height
 
         _LOGGER.info(
             "ATC device %s final dimensions: %dx%d (color_scheme=%d)",
