@@ -12,6 +12,7 @@ from .exceptions import ATCError
 from .imaging.uploader import BLEImageUploader
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
+from .models.device_types import SCREEN_TYPE_COLOR_SCHEME
 from .models.enums import FitMode, Rotation
 from .models.metadata import DeviceMetadata
 from .protocol.atc import ATCProtocol
@@ -191,6 +192,23 @@ class ATCDevice:
             protocol = self._connection.protocol
             self._capabilities = await protocol.interrogate_device(self._connection)
             self._device_config = await protocol.read_device_config(self._connection)
+
+            # Refine color_scheme using screen_type from dynamic config.
+            # The 0005 response only gives a color count (1/2/3) and cannot
+            # distinguish BWR from BWY; screen_type encodes that information.
+            refined = SCREEN_TYPE_COLOR_SCHEME.get(self._device_config.screen_type)
+            if refined is not None:
+                self._capabilities = DeviceCapabilities(
+                    width=self._capabilities.width,
+                    height=self._capabilities.height,
+                    color_scheme=refined,
+                    rotatebuffer=self._capabilities.rotatebuffer,
+                )
+                _LOGGER.debug(
+                    "Refined color_scheme from 0005 value to %d via screen_type %d",
+                    refined,
+                    self._device_config.screen_type,
+                )
 
             # Build metadata for image processing
             self._metadata = DeviceMetadata(

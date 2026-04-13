@@ -81,7 +81,7 @@ def _setup_logging(verbose: bool) -> None:
 def _add_device_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--device", required=True, metavar="ADDR", help="Device MAC address or UUID")
     parser.add_argument(
-        "--timeout", type=float, default=15.0, metavar="SECS", help="BLE timeout in seconds (default: 15.0)"
+        "--timeout", type=float, default=60.0, metavar="SECS", help="BLE timeout in seconds (default: 60.0)"
     )
 
 
@@ -172,10 +172,10 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
         disp.add(f"Rotate buffer {caps.rotatebuffer}")
 
     if config:
-        hw_name = get_device_type_name(config.hw_type)
+        screen_type_name = get_device_type_name(config.screen_type)
         hw = tree.add("[bold]Hardware[/bold]")
-        hw.add(f"HW type       [yellow]0x{config.hw_type:04X}[/yellow]  ({hw_name})")
-        hw.add(f"Screen type   {config.screen_type}")
+        hw.add(f"OEPL type     [yellow]0x{config.hw_type:04X}[/yellow]")
+        hw.add(f"Screen type   [yellow]{config.screen_type}[/yellow]  ({screen_type_name})")
         hw.add(f"Functions     0x{config.screen_functions:04X}")
         hw.add(f"WH inv (BLE)  {config.wh_inverted_ble}   WH inv (cfg)  {config.wh_inverted}")
         hw.add(f"Offsets       H={config.screen_h_offset}  W={config.screen_w_offset}")
