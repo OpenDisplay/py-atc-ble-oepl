@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.2.1...v0.3.0) (2026-04-14)
+
+
+### Features
+
+* add led command ([28399eb](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/28399eb80e4be9600920555fbeccca3be1ed2b91))
+* **cli:** add more fields to scan command ([06e4dfb](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/06e4dfb924a2e37e8a90806ee85c906781904a6c))
+* **cli:** add name to info command ([fda5fcc](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/fda5fccb414b31e5788636786d2dad5ab0d58ea8))
+* **cli:** add upload progress ([2fbf372](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/2fbf372c7985664f145f36e6c3317b51076795ae))
+
 ## [0.2.1](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.2.0...v0.2.1) (2026-04-13)
 
 
