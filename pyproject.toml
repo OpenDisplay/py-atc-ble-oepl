@@ -26,7 +26,8 @@ classifiers = [
 dependencies = [
     "bleak>=0.21.0",
     "bleak-retry-connector>=3.5.0",
-    "epaper-dithering>=0.1.0",
+    "numpy>=1.24.0,!=2.4.0",
+    "epaper-dithering==4.0.0",
     "Pillow>=10.0.0",
 ]
 
