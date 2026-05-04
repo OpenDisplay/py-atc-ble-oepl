@@ -304,7 +304,7 @@ class ATCDevice:
 
             # Apply dithering using epaper_dithering
             color_scheme = ColorScheme.from_value(self._metadata.color_scheme)
-            dithered = dither_image(img, color_scheme, dither_mode)
+            dithered = dither_image(img, color_scheme, mode=dither_mode)
             _LOGGER.debug(
                 "Applied %s dithering for color scheme %s",
                 dither_mode.name,
