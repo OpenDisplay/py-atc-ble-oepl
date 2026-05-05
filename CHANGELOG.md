@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.4.0...v0.5.0) (2026-05-05)
+
+
+### Features
+
+* bump epaper-dithering ([c2e3da6](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/c2e3da6794085413d41155e13d10c391e7841e0d))
+
 ## [0.4.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.3.0...v0.4.0) (2026-05-04)
 
 
