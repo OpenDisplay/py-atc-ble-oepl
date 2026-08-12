@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.0...v0.5.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* align epaper-dithering with HA core, expose advertisement parsing ([#10](https://github.com/OpenDisplay/py-atc-ble-oepl/issues/10)) ([98e3635](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/98e3635a39ed13a437c72d8767f913139ebde61b))
+
 ## [0.5.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.4.0...v0.5.0) (2026-05-05)
 
 
