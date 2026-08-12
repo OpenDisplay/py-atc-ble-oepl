@@ -50,7 +50,8 @@ class ATCProtocol:
         percentage = min(100, max(0, int((voltage - min_voltage) * 100 / (max_voltage - min_voltage))))
         return percentage
 
-    def parse_advertising_data(self, data: bytes) -> AdvertisingData:
+    @classmethod
+    def parse_advertising_data(cls, data: bytes) -> AdvertisingData:
         """Parse ATC manufacturer data for device state updates.
 
         Supports two advertising formats:
@@ -79,7 +80,7 @@ class ATCProtocol:
                 hw_type = int.from_bytes(data[1:3], "little")
                 fw_version = int.from_bytes(data[3:5], "little")
                 battery_mv = int.from_bytes(data[7:9], "little")
-                battery_pct = self._calculate_battery_percentage(battery_mv)
+                battery_pct = cls._calculate_battery_percentage(battery_mv)
 
                 return AdvertisingData(
                     battery_mv=battery_mv,
@@ -97,7 +98,7 @@ class ATCProtocol:
                 hw_type = int.from_bytes(data[1:3], "little")
                 fw_version = int.from_bytes(data[3:5], "little")
                 battery_mv = int.from_bytes(data[7:9], "little")
-                battery_pct = self._calculate_battery_percentage(battery_mv)
+                battery_pct = cls._calculate_battery_percentage(battery_mv)
                 temperature = struct.unpack("<b", data[9:10])[0]
 
                 return AdvertisingData(
