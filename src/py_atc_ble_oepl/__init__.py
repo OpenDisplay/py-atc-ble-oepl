@@ -27,10 +27,12 @@ from .exceptions import (
     BLETimeoutError,
     ProtocolError,
 )
+from .models.advertising import AdvertisingData
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
 from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name
 from .models.enums import FitMode, Rotation
+from .protocol.atc import ATCProtocol
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
 __version__ = "0.5.0"
@@ -43,6 +45,10 @@ __all__ = [
     "DiscoveredDevice",
     "DeviceCapabilities",
     "DeviceConfig",
+    "AdvertisingData",
+    # Protocol (for parsing advertisements from an external scanner, e.g. the
+    # Home Assistant bluetooth component, without running our own discovery)
+    "ATCProtocol",
     # Enums (re-exported from epaper_dithering)
     "ColorScheme",
     "DitherMode",

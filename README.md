@@ -134,7 +134,7 @@ from py_atc_ble_oepl import discover_atc_devices, ATCDevice
 
 devices = await discover_atc_devices(timeout=30.0)
 if devices:
-    async with ATCDevice(devices[0].mac_address, ble_device=devices[0].ble_device) as device:
+    async with ATCDevice(devices[0].mac_address, ble_device=devices[0].device) as device:
         await device.upload_image("photo.jpg")
 ```
 

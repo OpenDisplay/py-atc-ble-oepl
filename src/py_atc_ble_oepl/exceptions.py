@@ -17,5 +17,10 @@ class BLETimeoutError(ATCError):
     """BLE operation timed out."""
 
 
-class ProtocolError(ATCError):
-    """General protocol error (alias for BLEProtocolError for API compatibility)."""
+class ProtocolError(BLEProtocolError):
+    """General protocol error.
+
+    Subclasses :class:`BLEProtocolError` so that ``except BLEProtocolError``
+    catches it, as its name and documentation have always implied. It was
+    previously a sibling, which silently escaped such handlers.
+    """
