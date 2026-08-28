@@ -182,9 +182,13 @@ class ATCProtocol:
             wh_inverted,
         )
 
-        # Apply inversion if needed
-        final_width = height if wh_inverted else width
-        final_height = width if wh_inverted else height
+        # Reported in the orientation the panel *displays*, which is a quarter
+        # turn from the buffer it is sent -- see device._to_buffer_orientation.
+        # Callers size their artwork from this, so it has to be what they will
+        # be looking at: 152x200 for a portrait 2.00 inch tag, 250x128 for a
+        # landscape 2.13 inch one, both confirmed against hardware.
+        final_width = width if wh_inverted else height
+        final_height = height if wh_inverted else width
 
         _LOGGER.info(
             "ATC device %s final dimensions: %dx%d (color_scheme=%d)",

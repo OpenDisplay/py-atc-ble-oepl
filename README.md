@@ -138,6 +138,24 @@ if devices:
         await device.upload_image("photo.jpg")
 ```
 
+## Orientation
+
+`device.width` and `device.height` are the size the panel **displays**, which
+is what you draw for. They are a quarter turn from the buffer the tag is
+actually sent, and `upload_image` rotates your image into that buffer for you.
+
+The turn is a property of the hardware, not of any one model: a block written
+at buffer pixel `(0,0)` appears at the physical top right, with the buffer's X
+axis running physically downward. That was measured on four tags covering both
+`wh_inverted_ble` values, two resolutions, both panel orientations and both
+colour schemes.
+
+It matters because getting it wrong is invisible from the code: the buffer is
+the right *size* either way, so nothing fails and the tag renders a full,
+deliberate-looking image that is simply sideways. If you are comparing against
+`ATC_BLE_OEPL_Image_Upload.html`, note it leaves this to the person drawing on
+the canvas, so a straight port of its pixel loop is a quarter turn out.
+
 ## API reference
 
 ### `ATCDevice`

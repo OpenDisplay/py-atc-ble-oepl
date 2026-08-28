@@ -116,10 +116,13 @@ class TestParseAdvertisingData:
 
 class TestInterrogateDevice:
     async def test_width_and_height_parsed(self, protocol: ATCProtocol, mock_connection_factory):
+        # Reported in the orientation the panel displays, which is a quarter
+        # turn from the buffer the device is sent, so the two fields swap
+        # relative to how they arrive on the wire.
         conn = mock_connection_factory(build_display_info_response(width=296, height=128, colors=1))
         caps = await protocol.interrogate_device(conn)
-        assert caps.width == 296
-        assert caps.height == 128
+        assert caps.width == 128
+        assert caps.height == 296
 
     async def test_mono_color_scheme(self, protocol: ATCProtocol, mock_connection_factory):
         conn = mock_connection_factory(build_display_info_response(width=296, height=128, colors=1))
@@ -137,12 +140,13 @@ class TestInterrogateDevice:
         assert caps.color_scheme == 3
 
     async def test_wh_inverted_swaps_dimensions(self, protocol: ATCProtocol, mock_connection_factory):
-        # Device encodes width=184, height=384 with wh_inverted=True.
-        # Parser applies: final_width=height=384, final_height=width=184.
+        # wh_inverted_ble cancels the swap rather than causing one: the device
+        # already reports these the other way round, so the panel displays
+        # 184x384 and that is what a caller draws for.
         conn = mock_connection_factory(build_display_info_response(width=184, height=384, colors=1, wh_inverted=True))
         caps = await protocol.interrogate_device(conn)
-        assert caps.width == 384
-        assert caps.height == 184
+        assert caps.width == 184
+        assert caps.height == 384
 
     async def test_response_too_short_raises(self, protocol: ATCProtocol, mock_connection_factory):
         conn = mock_connection_factory(bytes(10))

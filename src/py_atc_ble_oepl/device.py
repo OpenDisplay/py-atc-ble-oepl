@@ -36,6 +36,25 @@ _TRANSPOSE_MAP = {
 }
 
 
+def _to_buffer_orientation(img: Image.Image) -> Image.Image:
+    """Turn a panel-oriented image into the buffer the device expects.
+
+    An ATC panel displays the buffer it receives rotated a quarter turn
+    clockwise: a block written at buffer pixel (0,0) shows up at the physical
+    top right, with the buffer's X axis running physically downward. Measured
+    on four tags covering both wh_inverted_ble values, two resolutions, both
+    panel orientations and both colour schemes, so it is a property of the
+    hardware rather than of any one model.
+
+    Sending an unrotated image is therefore not a smaller mistake than sending
+    the wrong size -- it fills the panel and looks deliberate, just sideways.
+
+    The turn is anticlockwise, cancelling the panel's, and lossless, so the
+    dithered palette survives it intact.
+    """
+    return img.transpose(Image.Transpose.ROTATE_90)
+
+
 def _apply_image_transform(img: Image.Image, rotate: Rotation, fit: FitMode, w: int, h: int) -> Image.Image:
     """Apply user rotation then fit/resize to target dimensions.
 
@@ -305,6 +324,11 @@ class ATCDevice:
             # Apply dithering using epaper_dithering
             color_scheme = ColorScheme.from_value(self._metadata.color_scheme)
             dithered = dither_image(img, color_scheme, mode=dither_mode)
+
+            # Dithering runs in the orientation the caller drew, so an ordered
+            # pattern lines up with the artwork rather than with the wire.
+            dithered = _to_buffer_orientation(dithered)
+            _LOGGER.debug("Rotated into buffer orientation: %dx%d", dithered.width, dithered.height)
             _LOGGER.debug(
                 "Applied %s dithering for color scheme %s",
                 dither_mode.name,
