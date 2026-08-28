@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.1...v0.5.2) (2026-08-28)
+
+
+### Bug Fixes
+
+* rotate images into the orientation ATC panels actually display ([#12](https://github.com/OpenDisplay/py-atc-ble-oepl/issues/12)) ([7185121](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/718512169173d193d61ebce3fdbd1fdae3d449af))
+
 ## [0.5.1](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.0...v0.5.1) (2026-08-12)
 
 
