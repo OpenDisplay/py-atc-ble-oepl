@@ -31,7 +31,7 @@ _TX_MODES_TELINK = (1 << 3) | (1 << 1) | (1 << 0)
 
 @dataclass(frozen=True)
 class PanelModel:
-    """One entry of the PanelIC 1000-1031 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031).
+    """One entry of the PanelIC 1000-1032 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031-1032).
 
     Width and height are the controller's native orientation, which is what the firmware checks
     the config against.
@@ -43,6 +43,16 @@ class PanelModel:
     width: int
     height: int
     colors: int  # 1 = BW, 2 = two-plane (BWR/BWY), 3 = BWRY
+    # DisplayConfig.rotation index (0-3 = 0/90/180/270 deg) that makes the tag's natural face
+    # upright (the way its case is held): hosts add it to the requested rotation, and the
+    # firmware draws its boot screen with it.
+    rotation: int = 0
+    # ATC's screen_w x screen_h for this glass when it differs from the native size: ATC reports
+    # the Hanshow BWY as 152x200, but it is wired 200 sources x 152 gates.
+    atc_size: tuple[int, int] | None = None
+
+    def matches_atc_size(self, w: int, h: int) -> bool:
+        return (w, h) == (self.atc_size or (self.width, self.height))
 
 
 # Canonical values from opendisplay_structs.h, enum PanelIC.
@@ -80,7 +90,9 @@ PANEL_MODELS: tuple[PanelModel, ...] = (
     PanelModel(1030, "SSD1619_022_LITE_BWR", "SSD", 128, 250, 2),
     # Telink-target addition, provisional until opendisplay-protocol assigns it: the Hanshow 2.66"
     # on ATC tags. Same size as SSD1619_026 but transposed (152 sources x 296 gates).
-    PanelModel(1031, "SSD16XX_HS_266_BWR", "SSD", 152, 296, 2),
+    PanelModel(1031, "SSD16XX_HS_266_BWR", "SSD", 152, 296, 2, rotation=1),
+    # Hanshow 2.0" BWY (ATC type 5): provisional like 1031, Telink firmware only.
+    PanelModel(1032, "SSD16XX_HS_200_BWY", "SSD", 200, 152, 2, rotation=3, atc_size=(152, 200)),
 )
 
 
@@ -153,7 +165,7 @@ def match_panel(config: DeviceConfig) -> PanelModel:
         m
         for m in PANEL_MODELS
         if m.controller == family
-        and (m.width, m.height) == (config.screen_w, config.screen_h)
+        and m.matches_atc_size(config.screen_w, config.screen_h)
         and m.colors == config.screen_colors
     ]
     if len(candidates) != 1:
@@ -161,7 +173,7 @@ def match_panel(config: DeviceConfig) -> PanelModel:
             f"no OpenDisplay panel model for ATC '{type_name}' "
             f"({config.screen_w}x{config.screen_h}, {config.screen_colors} colour plane(s), "
             f"controller {family or 'unknown'}); the Telink firmware's drivers cover the "
-            "PanelIC 1000-1031 line only"
+            "PanelIC 1000-1032 line only"
         )
     return candidates[0]
 
@@ -189,7 +201,7 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
         raise UnsupportedTagError(f"EPD pin(s) not assigned by the tag: {', '.join(missing)}")
 
     color_scheme = _color_scheme(config)
-    if panel.colors == 2 and color_scheme == _COLOR_BWY:
+    if panel.colors == 2 and color_scheme == _COLOR_BWY and not panel.name.endswith("_BWY"):
         warnings.append(
             f"panel is yellow (BWY) but the matched model {panel.name} is documented as BWR; "
             "the second plane drives yellow on this glass, so images need BWY dithering"
@@ -285,7 +297,7 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
                 "pixel_width": _hex(panel.width),
                 "pixel_height": _hex(panel.height),
                 "legacy_tagtype": _hex(config.hw_type),
-                "rotation": "0",
+                "rotation": str(panel.rotation),
                 "reset_pin": _hex(pins["reset"]),
                 "busy_pin": _hex(pins["busy"]),
                 "dc_pin": _hex(pins["dc"]),

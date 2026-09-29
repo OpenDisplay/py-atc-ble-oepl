@@ -114,12 +114,30 @@ class TestSupportedTag:
         assert "not verified on hardware" in text
 
 
+class TestHanshowBwy:
+    def test_type_5_maps_to_1032_as_bwy(self):
+        # ATC reports 152x200; the glass is wired 200 sources x 152 gates (verified on the tag).
+        result = convert_to_od_config(_tag(5))
+        d = next(p for p in result.config_json["packets"] if p["id"] == "32")["fields"]
+        assert (d["panel_ic_type"], d["pixel_width"], d["pixel_height"], d["color_scheme"]) == (
+            "1032",
+            "0xc8",
+            "0x98",
+            "2",
+        )
+        assert not any("documented as BWR" in w for w in result.warnings)
+
+    @pytest.mark.parametrize(("screen_type", "rotation"), [(5, "3"), (9, "1")])
+    def test_natural_face_is_upright(self, screen_type, rotation):
+        # The BWY tag is held portrait, the 2.66" landscape; both glasses are wired the other way.
+        assert _display(convert_to_od_config(_tag(screen_type)))["rotation"] == rotation
+
+
 class TestUnsupportedTags:
     @pytest.mark.parametrize(
         ("screen_type", "why"),
         [
             (10, "UC"),  # 2.13" UC 128x250: the 128x250 model is SSD, not UC
-            (5, "152x200"),  # 2.0" BWY 152x200: no model at this size
             (14, "TI"),  # 9.7" TI controller
         ],
     )
@@ -140,8 +158,8 @@ class TestUnsupportedTags:
             match_panel(cfg)
 
 
-def test_model_table_is_the_legacy_line_plus_1031():
-    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1032))
+def test_model_table_is_the_legacy_line_plus_1031_1032():
+    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1033))
 
 
 def test_output_parses_as_a_py_opendisplay_config():
