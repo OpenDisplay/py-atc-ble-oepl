@@ -205,3 +205,33 @@ class TestReadDeviceConfig:
         conn = mock_connection_factory(bad)
         with pytest.raises(BLEProtocolError, match="Unexpected response prefix"):
             await protocol.read_device_config(conn)
+
+
+# ATC_02AF11 (Hanshow Nebular 350Y-N) on an ATC build with the GUI-rotation byte, set to type 1.
+_CFG_WITH_ROTATION = bytes.fromhex(
+    "00cd0100600001000000008001b800000000000200000000004e3a8400683a84006f3a8400000000000801020100"
+    "10038003020000001001000020014001200280010100000101010403080380000001020202400210020000000000000000"
+)
+# The same config as firmware without the byte sends it.
+_CFG_WITHOUT_ROTATION = _CFG_WITH_ROTATION[:45] + _CFG_WITH_ROTATION[46:]
+
+
+class TestReadDeviceConfigLayouts:
+    @pytest.mark.parametrize("raw", [_CFG_WITH_ROTATION, _CFG_WITHOUT_ROTATION])
+    async def test_pins_read_the_same_with_and_without_rotation_byte(
+        self, protocol: ATCProtocol, mock_connection_factory, raw
+    ):
+        cfg = await protocol.read_device_config(mock_connection_factory(raw))
+        epd = cfg.epd_pinout
+        assert (epd.reset, epd.dc, epd.busy, epd.cs, epd.clk, epd.mosi) == (
+            0x0310,
+            0x0380,
+            0x0002,
+            0x0110,
+            0x0120,
+            0x0140,
+        )
+        assert (epd.enable, epd.enable1, epd.enable_invert) == (0x0220, 0x0180, True)
+        assert (cfg.led_pinout.r, cfg.led_pinout.g, cfg.led_pinout.b) == (0x0304, 0x0308, 0x0080)
+        assert (cfg.screen_type, cfg.screen_w, cfg.screen_h, cfg.adc_pinout) == (1, 184, 384, 0x0108)
+        assert cfg.gui_rotation == 0

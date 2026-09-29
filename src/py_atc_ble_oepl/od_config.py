@@ -31,7 +31,7 @@ _TX_MODES_TELINK = (1 << 3) | (1 << 1) | (1 << 0)
 
 @dataclass(frozen=True)
 class PanelModel:
-    """One entry of the PanelIC 1000-1032 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031-1032).
+    """One entry of the PanelIC 1000-1033 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031-1032).
 
     Width and height are the controller's native orientation, which is what the firmware checks
     the config against.
@@ -93,6 +93,8 @@ PANEL_MODELS: tuple[PanelModel, ...] = (
     PanelModel(1031, "SSD16XX_HS_266_BWR", "SSD", 152, 296, 2, rotation=1),
     # Hanshow 2.0" BWY (ATC type 5): provisional like 1031, Telink firmware only.
     PanelModel(1032, "SSD16XX_HS_200_BWY", "SSD", 200, 152, 2, rotation=3, atc_size=(152, 200)),
+    # Hanshow Nebular 350Y-N (ATC type 1, "350 HS BWY UC"): provisional like 1031.
+    PanelModel(1033, "UC8151_HS_350_BWY", "UC", 184, 384, 2, rotation=1),
 )
 
 
@@ -173,7 +175,7 @@ def match_panel(config: DeviceConfig) -> PanelModel:
             f"no OpenDisplay panel model for ATC '{type_name}' "
             f"({config.screen_w}x{config.screen_h}, {config.screen_colors} colour plane(s), "
             f"controller {family or 'unknown'}); the Telink firmware's drivers cover the "
-            "PanelIC 1000-1032 line only"
+            "PanelIC 1000-1033 line only"
         )
     return candidates[0]
 

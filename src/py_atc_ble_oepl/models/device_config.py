@@ -95,6 +95,7 @@ class DeviceConfig:
         led_pinout: LED GPIO assignments (None if led_enabled is False)
         nfc_pinout: NFC GPIO assignments (None if nfc_enabled is False)
         flash_pinout: Flash GPIO assignments (None if flash_enabled is False)
+        gui_rotation: ATC's own on-screen rotation (0-3); 0 on firmware predating the field
     """
 
     screen_type: int
@@ -119,3 +120,4 @@ class DeviceConfig:
     led_pinout: LEDPinout | None = None
     nfc_pinout: NFCPinout | None = None
     flash_pinout: FlashPinout | None = None
+    gui_rotation: int = 0

@@ -158,8 +158,8 @@ class TestUnsupportedTags:
             match_panel(cfg)
 
 
-def test_model_table_is_the_legacy_line_plus_1031_1032():
-    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1033))
+def test_model_table_is_the_legacy_line_plus_1031_to_1033():
+    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1034))
 
 
 def test_output_parses_as_a_py_opendisplay_config():
@@ -174,3 +174,9 @@ def test_output_parses_as_a_py_opendisplay_config():
     assert cfg.system.pwr_pin == 21
     assert cfg.power.battery_sense_pin == 11
     assert len(serializer.serialize_display_config(d)) > 0
+
+
+def test_nebular_350_bwy_model():
+    # Verified on the tag: held landscape, upright at rotation 1; colours, mirroring and edges correct.
+    m = next(m for m in PANEL_MODELS if m.panel_ic == 1033)
+    assert (m.controller, m.width, m.height, m.colors, m.rotation) == ("UC", 184, 384, 2, 1)

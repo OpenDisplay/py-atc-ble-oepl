@@ -19,6 +19,9 @@ from .constants import (
 if TYPE_CHECKING:
     from ..transport.connection import BLEConnection
 
+# EPD (26) + LED (7) + NFC (8) + flash (8) pinout blocks, as the dynamic config always carries them.
+_PINOUTS_LEN = 49
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -267,6 +270,14 @@ class ATCProtocol:
 
         offset = 2 + struct.calcsize("<HHHbHHHHHHHHIIIIHH")
 
+        # Newer ATC firmware inserts a one-byte GUI rotation here. The web uploader tells the two
+        # layouts apart the same way: the byte is present when more follows than the four pinout
+        # blocks take. Skipping it misreads every pin by a byte (reset and cs both came out 0x1000).
+        gui_rotation = 0
+        if len(response) - offset > _PINOUTS_LEN:
+            gui_rotation = response[offset]
+            offset += 1
+
         epd_pinout: EPDPinout | None = None
         if epd_enabled and offset + 26 <= len(response):
             # 10× uint16, 1× uint8, 1× uint16, 3× uint8  = 26 bytes
@@ -349,6 +360,7 @@ class ATCProtocol:
             flash_enabled=flash_enabled,
             adc_pinout=adc_pinout,
             uart_pinout=uart_pinout,
+            gui_rotation=gui_rotation,
             epd_pinout=epd_pinout,
             led_pinout=led_pinout,
             nfc_pinout=nfc_pinout,
