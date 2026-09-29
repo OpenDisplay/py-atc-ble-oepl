@@ -97,6 +97,10 @@ class TestSupportedTag:
         assert system["device_flags"] == "0x0"
         assert any("OD_TLSR_PWR_ACTIVE_LOW=0" in w for w in result.warnings)
 
+    def test_battery_pin_from_adc_pinout(self):
+        power = next(p for p in convert_to_od_config(_tag(9)).config_json["packets"] if p["id"] == "4")["fields"]
+        assert power["battery_sense_pin"] == "0xb"  # ATC 0x0108 = PB3 = 1 * 8 + 3
+
     def test_led_mapped(self):
         led = next(p for p in convert_to_od_config(_tag(9)).config_json["packets"] if p["id"] == "33")["fields"]
         assert (int(led["led_1_r"], 16), int(led["led_2_g"], 16), int(led["led_3_b"], 16)) == (26, 27, 7)
@@ -150,4 +154,5 @@ def test_output_parses_as_a_py_opendisplay_config():
     assert (d.panel_ic_type, d.pixel_width, d.pixel_height, d.color_scheme) == (1031, 152, 296, 1)
     assert (d.reset_pin, d.dc_pin, d.busy_pin, d.cs_pin, d.clk_pin, d.data_pin) == (28, 31, 1, 12, 13, 14)
     assert cfg.system.pwr_pin == 21
+    assert cfg.power.battery_sense_pin == 11
     assert len(serializer.serialize_display_config(d)) > 0

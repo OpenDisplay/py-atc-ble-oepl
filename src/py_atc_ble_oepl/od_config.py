@@ -220,6 +220,15 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
     if config.nfc_pinout is not None:
         warnings.append("NFC front end is not mapped (the Telink firmware has no NFC support)")
 
+    try:
+        battery_pin = atc_pin_to_od(config.adc_pinout)
+    except ValueError:
+        battery_pin = PIN_NONE
+        warnings.append(f"ATC adc_pinout 0x{config.adc_pinout:04X} is not a single pin; battery not measured")
+    else:
+        if battery_pin == PIN_NONE:
+            warnings.append("the tag reports no ADC pin; battery voltage will not be measured")
+
     warnings.append("SystemConfig.ic_type is 0: opendisplay-protocol has no ICType for the Telink TLSR825x yet")
     if pwr_pin != PIN_NONE:
         warnings.append(
@@ -259,7 +268,12 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
         {
             "id": "4",
             "name": "power_option",
-            "fields": {"power_mode": str(_POWER_MODE_BATTERY)},
+            "fields": {
+                "power_mode": str(_POWER_MODE_BATTERY),
+                # ATC's ADC pin is the one the Telink firmware drives high and measures to read
+                # the supply (Telink's battery-check method); OpenDisplay carries it here.
+                "battery_sense_pin": _hex(battery_pin),
+            },
         },
         {
             "id": "32",
