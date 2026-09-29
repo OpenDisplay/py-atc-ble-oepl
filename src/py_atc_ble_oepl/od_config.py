@@ -313,6 +313,9 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
 
     if config.led_pinout is not None:
         led = config.led_pinout
+        # ATC drives its LEDs active-low unless `inverted` is set, while OpenDisplay's default is
+        # active-high, so the invert bits are the opposite of ATC's flag (verified on the Hanshow
+        # 2.66": with 0 all three lit white, with 0x7 red, green and blue flash correctly).
         packets.append(
             {
                 "id": "33",
@@ -324,7 +327,7 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
                     "led_2_g": _hex(atc_pin_to_od(led.g)),
                     "led_3_b": _hex(atc_pin_to_od(led.b)),
                     "led_4": "0xff",
-                    "led_flags": _hex(0x7 if led.inverted else 0),
+                    "led_flags": _hex(0 if led.inverted else 0x7),
                 },
             }
         )

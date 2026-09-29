@@ -104,7 +104,7 @@ class TestSupportedTag:
     def test_led_mapped(self):
         led = next(p for p in convert_to_od_config(_tag(9)).config_json["packets"] if p["id"] == "33")["fields"]
         assert (int(led["led_1_r"], 16), int(led["led_2_g"], 16), int(led["led_3_b"], 16)) == (26, 27, 7)
-        assert led["led_flags"] == "0x0"
+        assert led["led_flags"] == "0x7"  # ATC not inverted = active-low = all three OD invert bits
 
     def test_reports_what_it_cannot_carry(self):
         text = " ".join(convert_to_od_config(_tag(9)).warnings)
