@@ -26,6 +26,7 @@ from .exceptions import ATCError, BLEConnectionError, BLEProtocolError, BLETimeo
 from .models.advertising import AdvertisingData
 from .models.device_types import get_device_type_name
 from .models.enums import FitMode, Rotation
+from .od_config import UnsupportedTagError, convert_to_od_config
 
 _T = TypeVar("_T")
 
@@ -226,6 +227,48 @@ async def _info(address: str, timeout: float, output_json: bool) -> None:
     _console.print(tree)
 
 
+# ── od-config ─────────────────────────────────────────────────────────────────
+
+
+def _add_od_config_parser(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    p = subparsers.add_parser(
+        "od-config",
+        help="Read the tag's ATC config and write the matching OpenDisplay config (for `opendisplay write-config`)",
+    )
+    _add_device_options(p)
+    p.add_argument("output", metavar="FILE", help="Where to write the OpenDisplay config JSON")
+    p.set_defaults(func=_cmd_od_config)
+
+
+def _cmd_od_config(args: argparse.Namespace) -> None:
+    _run(_od_config(args.device, args.timeout, args.output))
+
+
+async def _od_config(address: str, timeout: float, output: str) -> None:
+    try:
+        with _spinner() as progress:
+            task = progress.add_task("Connecting…", total=None)
+            async with ATCDevice(address, connection_timeout=timeout) as device:
+                progress.update(task, description="Reading config…")
+                config = device.device_config
+    except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
+        _handle_ble_error(exc)
+
+    if config is None:
+        _error("the tag returned no dynamic config")
+    try:
+        result = convert_to_od_config(config)
+    except UnsupportedTagError as exc:
+        _error(str(exc))
+
+    with open(output, "w", encoding="utf-8") as f:
+        json.dump(result.config_json, f, indent=2)
+        f.write("\n")
+    _console.print(f"[green]Wrote[/green] {output}  (panel {result.panel.name}, PanelIC {result.panel.panel_ic})")
+    for warning in result.warnings:
+        _console.print(f"[yellow]warning:[/yellow] {warning}")
+
+
 # ── led ───────────────────────────────────────────────────────────────────────
 
 
@@ -395,6 +438,7 @@ def main() -> None:
     _add_info_parser(subparsers)
     _add_led_parser(subparsers)
     _add_upload_parser(subparsers)
+    _add_od_config_parser(subparsers)
 
     args = parser.parse_args()
     _setup_logging(args.verbose)

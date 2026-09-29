@@ -32,6 +32,7 @@ from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
 from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name
 from .models.enums import FitMode, Rotation
+from .od_config import ODConfigResult, UnsupportedTagError, convert_to_od_config
 from .protocol.atc import ATCProtocol
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
@@ -39,6 +40,9 @@ __version__ = "0.5.2"
 
 __all__ = [
     # Main API
+    "convert_to_od_config",
+    "ODConfigResult",
+    "UnsupportedTagError",
     "ATCDevice",
     "discover_atc_devices",
     # Data structures
