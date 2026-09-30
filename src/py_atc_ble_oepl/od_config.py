@@ -189,8 +189,25 @@ def _hex(value: int) -> str:
     return f"0x{value:x}"
 
 
-def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
+def _identity_string(text: str) -> str:
+    """Fit one DataExtended field: 32 bytes of UTF-8 including the terminator."""
+    raw = text.encode("utf-8")[:31]
+    return raw.decode("utf-8", errors="ignore")
+
+
+def convert_to_od_config(
+    config: DeviceConfig,
+    *,
+    atc_name: str | None = None,
+    manufacturer: str | None = None,
+    model: str | None = None,
+) -> ODConfigResult:
     """Build an OpenDisplay config for a tag from its ATC dynamic config.
+
+    The identity strings (DataExtended, packet 0x2C) carry what the conversion knows: the maker
+    ("Hanshow" for ATC's HS types unless `manufacturer` says otherwise), the model (ATC's type
+    name unless `model` gives the real one), the tag's ATC name as its friendly name when
+    `atc_name` is given, and the ATC type, hardware id and PanelIC in custom string 1.
 
     Raises:
         UnsupportedTagError: when the panel has no OpenDisplay model, or the tag reports no EPD
@@ -355,6 +372,29 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
                 },
             }
         )
+
+    type_name = DEVICE_TYPES.get(config.screen_type, f"screen_type {config.screen_type}")
+    if manufacturer is None:
+        manufacturer = "Hanshow" if " HS " in f" {type_name} " else ""
+    packets.append(
+        {
+            "id": "44",
+            "name": "data_extended",
+            "fields": {
+                "manufacturer_name": _identity_string(manufacturer),
+                "model_name": _identity_string(model if model is not None else type_name),
+                "serial_number": "",
+                "friendly_name": _identity_string(atc_name or ""),
+                "device_location": "",
+                "device_id": "",
+                "custom_string_1": _identity_string(
+                    f"ATC type {config.screen_type}, hw {config.hw_type}, PanelIC {panel.panel_ic}"
+                ),
+                "custom_string_2": "",
+                "custom_string_3": "",
+            },
+        }
+    )
 
     return ODConfigResult(
         config_json={

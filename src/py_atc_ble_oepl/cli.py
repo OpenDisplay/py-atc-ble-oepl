@@ -11,6 +11,7 @@ from collections.abc import Coroutine
 from dataclasses import asdict
 from typing import Any, NoReturn, TypeVar
 
+from bleak import BleakScanner
 from epaper_dithering import DitherMode
 from PIL import Image, UnidentifiedImageError
 from rich.console import Console, ConsoleOptions, RenderResult
@@ -237,18 +238,26 @@ def _add_od_config_parser(subparsers: argparse._SubParsersAction[argparse.Argume
     )
     _add_device_options(p)
     p.add_argument("output", metavar="FILE", help="Where to write the OpenDisplay config JSON")
+    p.add_argument(
+        "--manufacturer", help='manufacturer name for the identity strings (default: "Hanshow" for HS types)'
+    )
+    p.add_argument("--model", help="model name for the identity strings (default: ATC's type name)")
     p.set_defaults(func=_cmd_od_config)
 
 
 def _cmd_od_config(args: argparse.Namespace) -> None:
-    _run(_od_config(args.device, args.timeout, args.output))
+    _run(_od_config(args.device, args.timeout, args.output, args.manufacturer, args.model))
 
 
-async def _od_config(address: str, timeout: float, output: str) -> None:
+async def _od_config(address: str, timeout: float, output: str, manufacturer: str | None, model: str | None) -> None:
+    atc_name: str | None = None
     try:
         with _spinner() as progress:
             task = progress.add_task("Connecting…", total=None)
-            async with ATCDevice(address, connection_timeout=timeout) as device:
+            # Found first so its advertised name (ATC_xxxxxx) can go into the identity strings.
+            ble_device = await BleakScanner.find_device_by_address(address, timeout=timeout)
+            atc_name = ble_device.name if ble_device is not None else None
+            async with ATCDevice(address, ble_device=ble_device, connection_timeout=timeout) as device:
                 progress.update(task, description="Reading config…")
                 config = device.device_config
     except (ATCError, BLEConnectionError, BLETimeoutError, BLEProtocolError) as exc:
@@ -257,7 +266,7 @@ async def _od_config(address: str, timeout: float, output: str) -> None:
     if config is None:
         _error("the tag returned no dynamic config")
     try:
-        result = convert_to_od_config(config)
+        result = convert_to_od_config(config, atc_name=atc_name, manufacturer=manufacturer, model=model)
     except UnsupportedTagError as exc:
         _error(str(exc))
 

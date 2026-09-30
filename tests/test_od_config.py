@@ -203,3 +203,25 @@ class TestTi970:
         assert "reserved_pin_2" not in _display(result)
         sysc = next(p for p in result.config_json["packets"] if p["id"] == "1")["fields"]
         assert sysc["pwr_pin_2"] == "0xff"
+
+
+class TestIdentityStrings:
+    def _ext(self, result):
+        return next(p for p in result.config_json["packets"] if p["id"] == "44")["fields"]
+
+    def test_defaults_from_the_atc_config(self):
+        ext = self._ext(convert_to_od_config(_tag(9), atc_name="ATC_A3F742"))
+        assert ext["manufacturer_name"] == "Hanshow"
+        assert ext["model_name"] == "266 HS BWR SSD"
+        assert ext["friendly_name"] == "ATC_A3F742"
+        assert ext["custom_string_1"] == "ATC type 9, hw 86, PanelIC 1031"
+
+    def test_overrides_and_non_hanshow_types(self):
+        ext = self._ext(convert_to_od_config(_tag(14), model="TC097SC1B8 9.7in BWR"))
+        assert ext["manufacturer_name"] == ""  # "970 TI BWR" names no maker
+        assert ext["model_name"] == "TC097SC1B8 9.7in BWR"
+        assert ext["friendly_name"] == ""
+
+    def test_fields_fit_32_bytes(self):
+        ext = self._ext(convert_to_od_config(_tag(9), model="x" * 40, manufacturer="ä" * 20))
+        assert all(len(v.encode()) <= 31 for v in ext.values())
