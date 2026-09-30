@@ -31,7 +31,7 @@ _TX_MODES_TELINK = (1 << 3) | (1 << 1) | (1 << 0)
 
 @dataclass(frozen=True)
 class PanelModel:
-    """One entry of the PanelIC 1000-1033 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031-1032).
+    """One entry of the PanelIC 1000-1034 line (the EPD-nRF5 / Firmware_NRF52 models, plus 1031-1032).
 
     Width and height are the controller's native orientation, which is what the firmware checks
     the config against.
@@ -50,6 +50,9 @@ class PanelModel:
     # ATC's screen_w x screen_h for this glass when it differs from the native size: ATC reports
     # the Hanshow BWY as 152x200, but it is wired 200 sources x 152 gates.
     atc_size: tuple[int, int] | None = None
+    # Split over two controllers: the right half's chip-select goes in DisplayConfig.cs_pin_2
+    # (reserved_pin_2 in the JSON) and ATC's second enable in SystemConfig.pwr_pin_2.
+    dual_cs: bool = False
 
     def matches_atc_size(self, w: int, h: int) -> bool:
         return (w, h) == (self.atc_size or (self.width, self.height))
@@ -95,6 +98,8 @@ PANEL_MODELS: tuple[PanelModel, ...] = (
     PanelModel(1032, "SSD16XX_HS_200_BWY", "SSD", 200, 152, 2, rotation=3, atc_size=(152, 200)),
     # Hanshow Nebular 350Y-N (ATC type 1, "350 HS BWY UC"): provisional like 1031.
     PanelModel(1033, "UC8151_HS_350_BWY", "UC", 184, 384, 2, rotation=1),
+    # 9.7" 960x672 BWR on two controllers (ATC type 14, "970 TI BWR"): provisional like 1031.
+    PanelModel(1034, "TI_970_BWR", "TI", 960, 672, 2, rotation=2, dual_cs=True),
 )
 
 
@@ -175,7 +180,7 @@ def match_panel(config: DeviceConfig) -> PanelModel:
             f"no OpenDisplay panel model for ATC '{type_name}' "
             f"({config.screen_w}x{config.screen_h}, {config.screen_colors} colour plane(s), "
             f"controller {family or 'unknown'}); the Telink firmware's drivers cover the "
-            "PanelIC 1000-1033 line only"
+            "PanelIC 1000-1034 line only"
         )
     return candidates[0]
 
@@ -226,9 +231,24 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
             "OD_TLSR_PWR_ACTIVE_LOW=0 and set pwr_pin by hand"
         )
         pwr_pin = PIN_NONE
+    # ATC's pin_enable counts the panel supply switches it drives. A second one goes in pwr_pin_2,
+    # which the Telink firmware switches with pwr_pin for dual-controller panels only (elsewhere
+    # the field is the power-latch pin).
     enable1 = atc_pin_to_od(epd.enable1)
-    if enable1 != PIN_NONE:
-        warnings.append(f"second panel enable {od_pin_name(enable1)} has no OpenDisplay field; not mapped")
+    pwr_pin_2 = PIN_NONE
+    if enable1 != PIN_NONE and panel.dual_cs and epd.pin_enable >= 2 and pwr_pin != PIN_NONE:
+        pwr_pin_2 = enable1
+    elif enable1 != PIN_NONE:
+        warnings.append(f"second panel enable {od_pin_name(enable1)} is not used for this panel; not mapped")
+    cs_pin_2 = PIN_NONE
+    if panel.dual_cs:
+        cs_pin_2 = atc_pin_to_od(epd.cs_s)
+        if cs_pin_2 == PIN_NONE:
+            raise UnsupportedTagError(f"{panel.name} needs a second chip-select, and the tag reports none")
+        warnings.append(
+            f"second busy line {od_pin_name(atc_pin_to_od(epd.busy_s))} is not mapped: "
+            "like ATC, the firmware waits on the first controller's busy only"
+        )
     if epd.flash_cs:
         warnings.append("external flash is not mapped (no flash support in the Telink firmware yet)")
     if config.nfc_pinout is not None:
@@ -260,7 +280,7 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
                 "communication_modes": "0x1",  # BLE
                 "device_flags": _hex(1 if pwr_pin != PIN_NONE else 0),
                 "pwr_pin": f"0x{pwr_pin:02x}",
-                "pwr_pin_2": "0xff",
+                "pwr_pin_2": f"0x{pwr_pin_2:02x}",
                 "pwr_pin_3": "0xff",
                 "reserved": "0x0",
             },
@@ -309,6 +329,8 @@ def convert_to_od_config(config: DeviceConfig) -> ODConfigResult:
                 "color_scheme": str(color_scheme),
                 "transmission_modes": _hex(_TX_MODES_TELINK),
                 "clk_pin": _hex(pins["clk"]),
+                # DisplayConfig.cs_pin_2 (protocol 1.4); py-opendisplay's JSON still calls it this.
+                **({"reserved_pin_2": _hex(cs_pin_2)} if panel.dual_cs else {}),
             },
         },
     ]

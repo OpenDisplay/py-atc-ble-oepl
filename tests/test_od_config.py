@@ -138,7 +138,6 @@ class TestUnsupportedTags:
         ("screen_type", "why"),
         [
             (10, "UC"),  # 2.13" UC 128x250: the 128x250 model is SSD, not UC
-            (14, "TI"),  # 9.7" TI controller
         ],
     )
     def test_refused_rather_than_guessed(self, screen_type, why):
@@ -158,8 +157,8 @@ class TestUnsupportedTags:
             match_panel(cfg)
 
 
-def test_model_table_is_the_legacy_line_plus_1031_to_1033():
-    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1034))
+def test_model_table_is_the_legacy_line_plus_1031_to_1034():
+    assert [m.panel_ic for m in PANEL_MODELS] == list(range(1000, 1035))
 
 
 def test_output_parses_as_a_py_opendisplay_config():
@@ -180,3 +179,27 @@ def test_nebular_350_bwy_model():
     # Verified on the tag: held landscape, upright at rotation 1; colours, mirroring and edges correct.
     m = next(m for m in PANEL_MODELS if m.panel_ic == 1033)
     assert (m.controller, m.width, m.height, m.colors, m.rotation) == ("UC", 184, 384, 2, 1)
+
+
+class TestTi970:
+    def test_type_14_maps_to_1034_with_both_halves(self):
+        result = convert_to_od_config(_tag(14))
+        d = _display(result)
+        assert (d["panel_ic_type"], d["pixel_width"], d["pixel_height"], d["color_scheme"]) == (
+            "1034",
+            "0x3c0",
+            "0x2a0",
+            "1",
+        )
+        assert int(d["cs_pin"], 16) == 12 and int(d["reserved_pin_2"], 16) == 17  # PB4, PC1
+        sysc = next(p for p in result.config_json["packets"] if p["id"] == "1")["fields"]
+        assert int(sysc["pwr_pin"], 16) == 27 and int(sysc["pwr_pin_2"], 16) == 18  # PD3, PC2
+        power = next(p for p in result.config_json["packets"] if p["id"] == "4")["fields"]
+        assert power["battery_sense_pin"] == "0x8"  # PB0
+        assert d["rotation"] == "2"  # verified on the board: upright at 180
+
+    def test_single_controller_panels_leave_the_second_pins_alone(self):
+        result = convert_to_od_config(_tag(9))
+        assert "reserved_pin_2" not in _display(result)
+        sysc = next(p for p in result.config_json["packets"] if p["id"] == "1")["fields"]
+        assert sysc["pwr_pin_2"] == "0xff"
