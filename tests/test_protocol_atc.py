@@ -114,6 +114,21 @@ class TestParseAdvertisingData:
             protocol.parse_advertising_data(bytes([99]) + bytes(15))
 
 
+class TestParseDeviceName:
+    """The name a tag advertises, as read from a scan response."""
+
+    def test_drops_the_c_string_terminator(self):
+        # Seen on real tags: the firmware includes the NUL in the name.
+        assert ATCProtocol.parse_device_name("ATC_05D611\x00") == "ATC_05D611"
+
+    def test_leaves_a_clean_name_alone(self):
+        assert ATCProtocol.parse_device_name("ATC_05D611") == "ATC_05D611"
+
+    @pytest.mark.parametrize("name", [None, "", "\x00", "\x00\x00"])
+    def test_no_name_left_is_none(self, name: str | None):
+        assert ATCProtocol.parse_device_name(name) is None
+
+
 class TestInterrogateDevice:
     async def test_width_and_height_parsed(self, protocol: ATCProtocol, mock_connection_factory):
         # Reported in the orientation the panel displays, which is a quarter

@@ -50,6 +50,23 @@ class ATCProtocol:
         percentage = min(100, max(0, int((voltage - min_voltage) * 100 / (max_voltage - min_voltage))))
         return percentage
 
+    @staticmethod
+    def parse_device_name(name: str | None) -> str | None:
+        """Return the name a tag advertises, without the firmware's padding.
+
+        The firmware sends its name with the C string terminator included, so
+        scanners report "ATC_05D611\\x00". The trailing NUL is dropped.
+
+        Args:
+            name: The advertised local name, as a scanner reports it
+
+        Returns:
+            The name, or None if nothing is left of it
+        """
+        if not name:
+            return None
+        return name.rstrip("\x00").strip() or None
+
     @classmethod
     def parse_advertising_data(cls, data: bytes) -> AdvertisingData:
         """Parse ATC manufacturer data for device state updates.

@@ -69,16 +69,17 @@ async def discover_atc_devices(timeout: float = 30.0) -> list[DiscoveredDevice]:
         except ValueError:
             _LOGGER.debug("Failed to parse advertising data for %s", device.address)
 
+        name = ATCProtocol.parse_device_name(device.name) or "Unknown"
         _LOGGER.debug(
             "Found ATC device: %s (%s) RSSI: %d",
-            device.name or "Unknown",
+            name,
             device.address,
             adv_data.rssi,
         )
         result.append(
             DiscoveredDevice(
                 mac_address=device.address,
-                name=device.name or "Unknown",
+                name=name,
                 rssi=adv_data.rssi,
                 device=device,
                 advertising_data=adv,
