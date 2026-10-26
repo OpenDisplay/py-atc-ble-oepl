@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.2...v0.6.0) (2026-10-26)
+
+
+### Features
+
+* ship type information with the package ([9bcc095](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/9bcc0956bdb82616499ad309251c28e9bad63e86))
+
+
+### Bug Fixes
+
+* drop the NUL that tags send at the end of their name ([d437b98](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/d437b98688b8403b7d56b0f4daabc7d37ca3924b))
+
 ## [0.5.2](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.1...v0.5.2) (2026-08-28)
 
 
