@@ -67,6 +67,41 @@ class ATCProtocol:
             return None
         return name.rstrip("\x00").strip() or None
 
+    @staticmethod
+    def device_name(address: str) -> str:
+        """Return the name the firmware gives a tag with this address.
+
+        The firmware names a tag "ATC_" followed by the last three octets of
+        its MAC address, so FB:FA:6C:05:D6:11 is "ATC_05D611". Useful when the
+        scan response carrying the name has not been received.
+
+        Args:
+            address: The tag's MAC address, e.g. "FB:FA:6C:05:D6:11"
+
+        Returns:
+            The tag's name
+        """
+        return "ATC_" + address.replace(":", "").replace("-", "").upper()[-6:]
+
+    @classmethod
+    def is_device_name(cls, name: str | None, address: str) -> bool:
+        """Return whether a device's advertised name fits an ATC tag.
+
+        Tags often show no name, since it only arrives in the scan response;
+        some scanners then report the address in its place. Any other name
+        than the one the firmware gives a tag at this address means the
+        device is something else.
+
+        Args:
+            name: The advertised local name, as a scanner reports it
+            address: The device's MAC address
+
+        Returns:
+            False if the device names itself as something other than this tag
+        """
+        name = cls.parse_device_name(name)
+        return name is None or name.upper() == address.upper() or name == cls.device_name(address)
+
     @classmethod
     def parse_advertising_data(cls, data: bytes) -> AdvertisingData:
         """Parse ATC manufacturer data for device state updates.
