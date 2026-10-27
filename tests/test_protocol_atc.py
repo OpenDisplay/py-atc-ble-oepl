@@ -129,6 +129,44 @@ class TestParseDeviceName:
         assert ATCProtocol.parse_device_name(name) is None
 
 
+class TestDeviceName:
+    """The name the firmware derives from a tag's address."""
+
+    @pytest.mark.parametrize(
+        ("address", "name"),
+        [
+            # Seen on real tags.
+            ("FB:FA:6C:05:D6:11", "ATC_05D611"),
+            ("32:6F:AD:16:48:40", "ATC_164840"),
+            ("32:6f:ad:16:48:40", "ATC_164840"),
+        ],
+    )
+    def test_last_three_octets(self, address: str, name: str):
+        assert ATCProtocol.device_name(address) == name
+
+
+class TestIsDeviceName:
+    """Whether an advertised name fits an ATC tag at that address."""
+
+    ADDRESS = "FB:FA:6C:05:D6:11"
+
+    @pytest.mark.parametrize("name", ["ATC_05D611\x00", "ATC_05D611", None, "", ADDRESS])
+    def test_own_name_or_none_fits(self, name: str | None):
+        assert ATCProtocol.is_device_name(name, self.ADDRESS)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            # A Valve Index base station that picked up a tag's advertisement.
+            "LHB-5E72F725",
+            # Another tag's name.
+            "ATC_164840",
+        ],
+    )
+    def test_other_names_do_not(self, name: str):
+        assert not ATCProtocol.is_device_name(name, self.ADDRESS)
+
+
 class TestInterrogateDevice:
     async def test_width_and_height_parsed(self, protocol: ATCProtocol, mock_connection_factory):
         # Reported in the orientation the panel displays, which is a quarter
