@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.8.0...v0.9.0) (2026-10-27)
+
+
+### Features
+
+* guess who made a tag from its screen type ([109bfa5](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/109bfa5d76f27ba2c8e53e608d4559cafd4a801f))
+
 ## [0.8.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.7.0...v0.8.0) (2026-10-27)
 
 
