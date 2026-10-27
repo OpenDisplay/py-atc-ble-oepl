@@ -27,6 +27,7 @@ from .exceptions import (
     BLETimeoutError,
     ProtocolError,
 )
+from .firmware import FIRMWARE_URL, ATCFirmware, FirmwareError, firmware_version
 from .models.advertising import AdvertisingData
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
@@ -59,8 +60,13 @@ __all__ = [
     "DEVICE_TYPES",
     "SCREEN_TYPE_COLOR_SCHEME",
     "get_device_type_name",
+    # Firmware
+    "ATCFirmware",
+    "FIRMWARE_URL",
+    "firmware_version",
     # Exceptions
     "ATCError",
+    "FirmwareError",
     "BLEConnectionError",
     "BLETimeoutError",
     "BLEProtocolError",

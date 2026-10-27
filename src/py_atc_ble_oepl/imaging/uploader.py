@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from PIL import Image
 
 from ..exceptions import ATCError
+from ..firmware import DATATYPE_FW_UPDATE
 from .encoding import (
     BLE_BLOCK_SIZE,
     BLE_MAX_PACKET_DATA_SIZE,
@@ -34,6 +35,8 @@ class BLEResponse(Enum):
     BLOCK_PART_CONTINUE = "00C5"
     UPLOAD_COMPLETE = "00C7"
     IMAGE_ALREADY_DISPLAYED = "00C8"
+    # The tag stored a firmware update and installs it as it restarts.
+    FIRMWARE_UPDATED = "00C9"
 
 
 class BLECommand(Enum):
@@ -76,6 +79,7 @@ class BLEImageUploader:
         self._current_block_id: int | None = None
         self._upload_complete: asyncio.Event = asyncio.Event()
         self._upload_error: str | None = None
+        self._outcome: BLEResponse | None = None
 
     async def upload_image_block_based(self, image: Image.Image, color_scheme: int, compress: bool = True) -> bool:
         """Upload image using block-based protocol.
@@ -104,46 +108,67 @@ class BLEImageUploader:
                 len(pixel_array),
             )
 
-            self._img_array = pixel_array
-            self._img_array_len = len(self._img_array)
-            self._total_blocks = math.ceil(self._img_array_len / BLE_BLOCK_SIZE)
-            self._upload_complete.clear()
-            self._upload_error = None
-
-            # Send data info to initiate upload
-            data_info = create_data_info(
-                255,  # checksum placeholder
-                zlib.crc32(self._img_array) & 0xFFFFFFFF,
-                self._img_array_len,
-                data_type,
-                0,  # data_type_argument
-                0,  # next_check_in
-            )
-            await self.connection.write_command(bytes.fromhex(BLECommand.DATA_INFO.value) + data_info)
-
-            # Wait for responses using request-response pattern
-            while not self._upload_complete.is_set():
-                response = await self._wait_for_response()
-                if response and await self._handle_response(response):
-                    continue
-                elif response is None:
-                    # Timeout - this is a failure
-                    _LOGGER.error(
-                        "Upload failed for %s: timeout waiting for response",
-                        self.mac_address,
-                    )
-                    return False
-
-            if self._upload_error:
-                raise ATCError(f"Upload failed: {self._upload_error}")
-
-            # Only reach here if upload_complete was set by a success response
+            outcome = await self._transfer(pixel_array, data_type)
+            if outcome not in (BLEResponse.UPLOAD_COMPLETE, BLEResponse.IMAGE_ALREADY_DISPLAYED):
+                raise ATCError(f"Tag answered the image with {outcome.name if outcome else None}")
+            # Show it.
+            await self.connection.write_command(bytes.fromhex("0003"))
             _LOGGER.info("BLE image upload completed successfully for %s", self.mac_address)
             return True
 
         except Exception as e:
             _LOGGER.error("Image upload failed for %s: %s", self.mac_address, e)
             return False
+
+    async def upload_firmware(self, data: bytes) -> None:
+        """Send a firmware image, which the tag installs as it restarts.
+
+        Returns once the tag reports the image stored (0x00C9). The tag checks
+        the image before installing it and keeps its own firmware if the check
+        fails, so success is only certain once it reports the new version.
+
+        Raises:
+            ATCError: If the tag stops answering or answers otherwise.
+        """
+        _LOGGER.info("Starting BLE firmware upload to %s (%d bytes)", self.mac_address, len(data))
+        outcome = await self._transfer(data, DATATYPE_FW_UPDATE)
+        if outcome is not BLEResponse.FIRMWARE_UPDATED:
+            raise ATCError(f"Tag answered the firmware with {outcome.name if outcome else None}")
+        _LOGGER.info("BLE firmware upload completed for %s", self.mac_address)
+
+    async def _transfer(self, data: bytes, data_type: int) -> BLEResponse | None:
+        """Announce *data* and serve the blocks the tag asks for, until it is done.
+
+        Returns the response that ended the transfer.
+
+        Raises:
+            ATCError: If the tag stops answering.
+        """
+        self._img_array = data
+        self._img_array_len = len(data)
+        self._total_blocks = math.ceil(self._img_array_len / BLE_BLOCK_SIZE)
+        self._upload_complete.clear()
+        self._upload_error = None
+        self._outcome = None
+
+        data_info = create_data_info(
+            255,  # checksum placeholder
+            zlib.crc32(data) & 0xFFFFFFFF,
+            self._img_array_len,
+            data_type,
+            0,  # data_type_argument
+            0,  # next_check_in
+        )
+        await self.connection.write_command(bytes.fromhex(BLECommand.DATA_INFO.value) + data_info)
+
+        while not self._upload_complete.is_set():
+            response = await self._wait_for_response()
+            if response is None:
+                raise ATCError("Tag stopped answering during the transfer")
+            await self._handle_response(response)
+        if self._upload_error:
+            raise ATCError(f"Upload failed: {self._upload_error}")
+        return self._outcome
 
     async def _wait_for_response(self, timeout: float = 10.0) -> bytes | None:
         """Wait for next upload response with timeout.
@@ -239,29 +264,12 @@ class BLEImageUploader:
                     await self._send_next_block_part()
                     return True
 
-                case BLEResponse.UPLOAD_COMPLETE:
-                    # Upload succeeded - send draw/refresh command (0x0003)
-                    _LOGGER.info("Upload complete response received - sending display refresh command")
-                    await self.connection.write_command(bytes.fromhex("0003"))
-
-                    # Clear state
+                case BLEResponse.UPLOAD_COMPLETE | BLEResponse.IMAGE_ALREADY_DISPLAYED | BLEResponse.FIRMWARE_UPDATED:
+                    _LOGGER.info("Transfer ended: %s", response_enum.name)
                     self._current_block_id = None
                     self._packets = []
                     self._packet_index = 0
-
-                    self._upload_complete.set()
-                    return False
-
-                case BLEResponse.IMAGE_ALREADY_DISPLAYED:
-                    # Image already on device - send draw/refresh command (0x0003)
-                    _LOGGER.info("Image already displayed response received - sending display refresh command")
-                    await self.connection.write_command(bytes.fromhex("0003"))
-
-                    # Clear state
-                    self._current_block_id = None
-                    self._packets = []
-                    self._packet_index = 0
-
+                    self._outcome = response_enum
                     self._upload_complete.set()
                     return False
 
