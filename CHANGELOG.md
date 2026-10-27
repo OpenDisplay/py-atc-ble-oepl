@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.6.0...v0.7.0) (2026-10-27)
+
+
+### Features
+
+* derive a tag's name from its address and check names against it ([2462cce](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/2462ccecbc60b8095dbcbd918f185cc37bbd7434))
+
 ## [0.6.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.5.2...v0.6.0) (2026-10-26)
 
 
