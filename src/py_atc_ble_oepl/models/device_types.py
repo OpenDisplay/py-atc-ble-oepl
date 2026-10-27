@@ -117,3 +117,29 @@ def get_device_type_name(screen_type: int) -> str:
     if screen_type in DEVICE_TYPES:
         return DEVICE_TYPES[screen_type]
     return f"unknown (0x{screen_type:04X})"
+
+
+# The maker codes in the type names above. The others in them are panel
+# controllers (UC, SSD, ST, UC_PRO, JD), which say nothing about the maker.
+_MANUFACTURER_CODES: dict[str, str] = {
+    "HS": "Hanshow",
+    "Gici": "Gicisky",
+    # TI is the panel controller on atc1441's page, but the tags with it are
+    # SoluM's large M3s: an M3 12.2" runs as 15, "1200 TI BWR" (atc_ble_oepl
+    # channel on the OpenEPaperLink Discord).
+    "TI": "SoluM",
+}
+
+
+def guess_manufacturer(screen_type: int) -> str | None:
+    """Guess who made a tag from its ATC screen type.
+
+    Read from the maker code in the type's name ("350 HS BWY UC" is a
+    Hanshow). Returns ``None`` for types whose maker is not known, such as
+    the "WO" ones, and for the dynamic type.
+
+    Args:
+        screen_type: Screen type identifier from the 00CD dynamic config response
+    """
+    name = DEVICE_TYPES.get(screen_type, "")
+    return next((_MANUFACTURER_CODES[code] for code in name.split() if code in _MANUFACTURER_CODES), None)
