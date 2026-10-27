@@ -12,6 +12,7 @@ from epaper_dithering import ColorScheme, DitherMode, dither_image
 from PIL import Image
 
 from .exceptions import ATCError
+from .firmware import ATCFirmware
 from .imaging.uploader import BLEImageUploader
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
@@ -342,6 +343,33 @@ class ATCDevice:
             uploader = BLEImageUploader(self._connection, self.mac_address, progress_callback=progress_callback)
             success = await uploader.upload_image_block_based(dithered, self._metadata.color_scheme, compress=compress)
             return success
+
+    async def update_firmware(
+        self,
+        firmware: ATCFirmware,
+        progress_callback: Callable[[int, int], None] | None = None,
+    ) -> None:
+        """Send *firmware* to the tag, which installs it as it restarts.
+
+        **A failed update can leave a tag needing a wired flash to recover.**
+        The tag checks the image before installing it and keeps its own
+        firmware if the check fails; :meth:`ATCFirmware.from_bytes` runs the
+        same check first. The tag drops the connection to restart, and reports
+        the new version in its advertisement (``AdvertisingData.fw_version``)
+        once it has.
+
+        Args:
+            firmware: The image, from :meth:`ATCFirmware.from_bytes`
+            progress_callback: Optional callback(bytes_sent, total_bytes)
+
+        Raises:
+            ATCError: If the tag stops answering or does not store the image.
+        """
+        async with self._lock:
+            if not self._connection:
+                raise RuntimeError("Not connected - use device within async context manager")
+            uploader = BLEImageUploader(self._connection, self.mac_address, progress_callback=progress_callback)
+            await uploader.upload_firmware(firmware.data)
 
     async def flash_led(self, duration: float = 5.0) -> None:
         """Flash the device LED to physically identify it.
