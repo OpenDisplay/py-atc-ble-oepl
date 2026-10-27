@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.7.0...v0.8.0) (2026-10-27)
+
+
+### Features
+
+* update a tag's ATC firmware over Bluetooth ([6d3f324](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/6d3f324ac841eb27291f4e4aed49555e039b0095))
+
 ## [0.7.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.6.0...v0.7.0) (2026-10-27)
 
 
