@@ -31,7 +31,7 @@ from .firmware import FIRMWARE_URL, ATCFirmware, FirmwareError, firmware_version
 from .models.advertising import AdvertisingData
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
-from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name
+from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name, guess_manufacturer
 from .models.enums import FitMode, Rotation
 from .protocol.atc import ATCProtocol
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
@@ -60,6 +60,7 @@ __all__ = [
     "DEVICE_TYPES",
     "SCREEN_TYPE_COLOR_SCHEME",
     "get_device_type_name",
+    "guess_manufacturer",
     # Firmware
     "ATCFirmware",
     "FIRMWARE_URL",

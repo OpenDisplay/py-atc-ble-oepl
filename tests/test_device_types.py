@@ -6,6 +6,7 @@ from py_atc_ble_oepl.models.device_types import (
     DEVICE_TYPES,
     SCREEN_TYPE_COLOR_SCHEME,
     get_device_type_name,
+    guess_manufacturer,
 )
 
 
@@ -62,3 +63,27 @@ class TestScreenTypeColorScheme:
     def test_all_screen_types_1_to_47_present(self):
         for i in range(1, 48):
             assert i in SCREEN_TYPE_COLOR_SCHEME, f"screen_type {i} missing from SCREEN_TYPE_COLOR_SCHEME"
+
+
+class TestGuessManufacturer:
+    @pytest.mark.parametrize(
+        ("screen_type", "maker"),
+        [
+            (5, "Hanshow"),  # 200 HS BWY SSD, seen on a real HS 2.00" BWY
+            (16, "Hanshow"),  # 213 HS BWR SSD, a Hanshow Stellar Pro 213
+            (12, "Gicisky"),  # 290 Gici BWR SSD
+            (15, "SoluM"),  # 1200 TI BWR, an M3 12.2"
+            (26, "SoluM"),  # 581 TI BW
+        ],
+    )
+    def test_maker_from_the_code_in_the_name(self, screen_type: int, maker: str):
+        assert guess_manufacturer(screen_type) == maker
+
+    @pytest.mark.parametrize("screen_type", [36, 41, 65535, 9999])
+    def test_no_guess_without_a_known_maker_code(self, screen_type: int):
+        # 36 and 41 are WO types, whose maker is not known.
+        assert guess_manufacturer(screen_type) is None
+
+    def test_only_the_wo_types_and_the_dynamic_type_have_no_maker(self):
+        unknown = {name for t, name in DEVICE_TYPES.items() if guess_manufacturer(t) is None}
+        assert unknown == {"Dynamic (HW Config Tab)", "290 WO BWRY JD", "290 WO BWRY JD V2", "260 WO BWRY JD V2"}
