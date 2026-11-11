@@ -170,7 +170,7 @@ ATCDevice(mac_address, ble_device=None, auto_interrogate=True, connection_timeou
 | `async flash_led(duration=5.0)`  | Flash the LED for `duration` seconds to identify the device |
 | `async upload_image(image, ...)` | Upload and display an image                                 |
 | `width`, `height`                | Display dimensions in pixels (`None` before interrogation)  |
-| `color_scheme`                   | `ColorScheme` enum value (`None` before interrogation)      |
+| `color_scheme`                   | `ColorScheme` (`py_atc_ble_oepl.ColorScheme`; `None` before interrogation) |
 | `device_config`                  | `DeviceConfig` dataclass with full hardware settings        |
 
 ### `discover_atc_devices(timeout=30.0)`

@@ -16,7 +16,7 @@ Example usage:
     ...     await device.upload_image("image.jpg", dither_mode=DitherMode.BURKES)
 """
 
-from epaper_dithering import ColorScheme, DitherMode
+from epaper_dithering import DitherMode
 
 from .device import ATCDevice
 from .discovery import DiscoveredDevice, discover_atc_devices
@@ -32,7 +32,7 @@ from .models.advertising import AdvertisingData
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
 from .models.device_types import DEVICE_TYPES, SCREEN_TYPE_COLOR_SCHEME, get_device_type_name, guess_manufacturer
-from .models.enums import FitMode, Rotation
+from .models.enums import ColorScheme, FitMode, Rotation
 from .protocol.atc import ATCProtocol
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
