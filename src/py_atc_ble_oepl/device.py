@@ -8,7 +8,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from epaper_dithering import ColorScheme, DitherMode, dither_image
+from epaper_dithering import DitherMode, DitherOptions, dither_image
 from PIL import Image
 
 from .exceptions import ATCError
@@ -17,7 +17,7 @@ from .imaging.uploader import BLEImageUploader
 from .models.capabilities import DeviceCapabilities
 from .models.device_config import DeviceConfig
 from .models.device_types import SCREEN_TYPE_COLOR_SCHEME
-from .models.enums import FitMode, Rotation
+from .models.enums import ColorScheme, FitMode, Rotation
 from .models.metadata import DeviceMetadata
 from .protocol.atc import ATCProtocol
 from .protocol.constants import CMD_LED_OFF, CMD_LED_ON, SERVICE_UUID
@@ -29,6 +29,14 @@ if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def dither_for_scheme(image: Image.Image, color_scheme: ColorScheme, mode: DitherMode) -> Image.Image:
+    """Dither *image* to *color_scheme*'s inks, in the exact colours the encoder reads."""
+    dithered = dither_image(image, color_scheme.palette, DitherOptions(mode=mode))
+    dithered.putpalette([channel for rgb in color_scheme.inks.values() for channel in rgb])
+    return dithered
+
 
 _TRANSPOSE_MAP = {
     Rotation.ROTATE_90: Image.Transpose.ROTATE_90,
@@ -324,7 +332,7 @@ class ATCDevice:
 
             # Apply dithering using epaper_dithering
             color_scheme = ColorScheme.from_value(self._metadata.color_scheme)
-            dithered = dither_image(img, color_scheme, mode=dither_mode)
+            dithered = dither_for_scheme(img, color_scheme, dither_mode)
 
             # Dithering runs in the orientation the caller drew, so an ordered
             # pattern lines up with the artwork rather than with the wire.
