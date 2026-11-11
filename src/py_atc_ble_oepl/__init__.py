@@ -36,7 +36,7 @@ from .models.enums import ColorScheme, FitMode, Rotation
 from .protocol.atc import ATCProtocol
 from .protocol.constants import MANUFACTURER_ID, SERVICE_UUID
 
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 
 __all__ = [
     # Main API

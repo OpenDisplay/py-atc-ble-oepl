@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.9.0...v1.0.0) (2026-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* requires epaper-dithering 7. py_atc_ble_oepl.ColorScheme is now this package's own enum with values 0-3 only, not epaper_dithering.ColorScheme; DitherMode is epaper-dithering 7's string enum.
+
+### Features
+
+* move to epaper-dithering 7 ([b3ab600](https://github.com/OpenDisplay/py-atc-ble-oepl/commit/b3ab6006804816aae69c924253ba8800b72e9fcd))
+
 ## [0.9.0](https://github.com/OpenDisplay/py-atc-ble-oepl/compare/v0.8.0...v0.9.0) (2026-10-27)
 
 
