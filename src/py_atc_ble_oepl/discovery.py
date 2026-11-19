@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -14,6 +15,7 @@ from .protocol.constants import MANUFACTURER_ID
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
+    from bleak.backends.scanner import AdvertisementData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,22 +56,30 @@ async def discover_atc_devices(timeout: float = 30.0) -> list[DiscoveredDevice]:
         ...     print(f"Found {device.name} at {device.mac_address}")
     """
     _LOGGER.info("Scanning for ATC devices for %ss...", timeout)
-    raw = await BleakScanner.discover(timeout=timeout, return_adv=True)
+
+    # Tags alternate advertisements with and without the ATC manufacturer data. Keep the
+    # latest one *with* it per device: BleakScanner.discover() keeps only the last packet,
+    # which can be one without, and then the tag is missed.
+    seen: dict[str, tuple[BLEDevice, AdvertisementData]] = {}
+
+    def on_advertisement(device: BLEDevice, adv_data: AdvertisementData) -> None:
+        if MANUFACTURER_ID in adv_data.manufacturer_data:
+            seen[device.address] = (device, adv_data)
+
+    async with BleakScanner(detection_callback=on_advertisement):
+        await asyncio.sleep(timeout)
 
     _protocol = ATCProtocol()
     result: list[DiscoveredDevice] = []
 
-    for device, adv_data in raw.values():
-        if MANUFACTURER_ID not in adv_data.manufacturer_data:
-            continue
-
+    for device, adv_data in seen.values():
         adv: AdvertisingData | None = None
         try:
             adv = _protocol.parse_advertising_data(adv_data.manufacturer_data[MANUFACTURER_ID])
         except ValueError:
             _LOGGER.debug("Failed to parse advertising data for %s", device.address)
 
-        name = ATCProtocol.parse_device_name(device.name) or "Unknown"
+        name = ATCProtocol.parse_device_name(adv_data.local_name or device.name) or "Unknown"
         _LOGGER.debug(
             "Found ATC device: %s (%s) RSSI: %d",
             name,
